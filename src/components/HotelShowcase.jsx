@@ -49,18 +49,17 @@ const HotelShowcase = ({ selectedHotel, onBack }) => {
 
   return (
     <motion.section
-      initial={{ opacity: 0, y: 80, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 40, scale: 0.98 }}
-      transition={{ type: 'spring', damping: 28, stiffness: 130 }}
-      className="fixed inset-0 z-50 bg-navy overflow-y-auto overflow-x-hidden safe-area-padding"
+      initial={{ opacity: 0, y: 60 }}
+      animate={{ opacity: 1, y: 0, transition: { type: 'spring', damping: 26, stiffness: 140 } }}
+      exit={{ opacity: 0, pointerEvents: 'none', transition: { duration: 0.15 } }}
+      className="fixed inset-0 z-50 bg-page overflow-y-auto overflow-x-hidden safe-area-padding"
     >
-      {/* ── Ambient Background Layer ── */}
+      {/* Ambient Background */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="ambient-orb w-[500px] h-[500px] bg-gold/5 -top-[10%] -right-[5%]" />
       </div>
 
-      {/* ── Content with Stagger Reveal ── */}
+      {/* Content */}
       <motion.div
         variants={stagger}
         initial="initial"
@@ -79,24 +78,24 @@ const HotelShowcase = ({ selectedHotel, onBack }) => {
           <span className="text-sm">العودة للوجهات الرئيسية</span>
         </motion.button>
 
-        {/* Header Section — Centered */}
+        {/* Header */}
         <motion.div
           variants={fadeUp}
           className="text-center mb-8 md:mb-12 space-y-3 md:space-y-5"
         >
-          <h2 className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-bold font-arabic text-white leading-tight">
+          <h2 className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-bold font-arabic text-ink leading-tight">
             {selectedHotel.displayName}
           </h2>
           <div className="h-1 w-16 md:w-24 bg-gradient-to-r from-transparent via-gold to-transparent rounded-full mx-auto" />
-          <p className="text-white/50 text-sm sm:text-base md:text-lg max-w-2xl mx-auto font-arabic leading-relaxed">
+          <p className="text-muted text-sm sm:text-base md:text-lg max-w-2xl mx-auto font-arabic leading-relaxed">
             {selectedHotel.description}
           </p>
         </motion.div>
 
-        {/* Premium Category Selector — Centered & Responsive */}
+        {/* Category Selector */}
         <motion.div variants={fadeUp} className="mb-10 md:mb-16">
           <div className="flex justify-center">
-            <div className="inline-flex flex-wrap justify-center gap-2 md:gap-2.5 p-2 md:p-2.5 rounded-2xl md:rounded-3xl glass-strong border border-white/[0.06] font-arabic max-w-full">
+            <div className="inline-flex flex-wrap justify-center gap-2 md:gap-2.5 p-2 md:p-2.5 rounded-2xl md:rounded-3xl glass-strong border border-ink/[0.06] font-arabic max-w-full">
               {selectedHotel.categories.map((cat) => (
                 <button
                   key={cat.id}
@@ -105,7 +104,7 @@ const HotelShowcase = ({ selectedHotel, onBack }) => {
                     'relative px-4 sm:px-6 md:px-8 py-2.5 md:py-3.5 rounded-xl md:rounded-2xl transition-all duration-500 text-sm md:text-base flex items-center gap-2',
                     activeCategory === cat.id
                       ? 'text-navy font-bold shadow-lg shadow-gold/20'
-                      : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04]'
+                      : 'text-muted hover:text-ink hover:bg-ink/[0.04]'
                   )}
                 >
                   {activeCategory === cat.id && (
@@ -125,7 +124,7 @@ const HotelShowcase = ({ selectedHotel, onBack }) => {
                       'text-[10px] md:text-[11px] min-w-[1.35rem] px-1.5 py-0.5 rounded-full text-center tabular-nums transition-colors duration-500',
                       activeCategory === cat.id
                         ? 'bg-navy/20 text-navy/70'
-                        : 'bg-white/[0.06] text-white/25'
+                        : 'bg-ink/[0.06] text-muted'
                     )}
                   >
                     {cat.count}
@@ -136,7 +135,7 @@ const HotelShowcase = ({ selectedHotel, onBack }) => {
           </div>
         </motion.div>
 
-        {/* ── The "Wonder" Gallery ── */}
+        {/* Gallery */}
         <motion.div variants={fadeUp} className="relative mb-16 md:mb-28">
           <AnimatePresence mode="wait">
             <motion.div
@@ -159,7 +158,7 @@ const HotelShowcase = ({ selectedHotel, onBack }) => {
           </AnimatePresence>
         </motion.div>
 
-        {/* ── Feature Info Cards ── */}
+        {/* Feature Info Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-12">
           {infoCards.map((card, i) => {
             const Icon = card.icon;
@@ -168,7 +167,7 @@ const HotelShowcase = ({ selectedHotel, onBack }) => {
                 key={i}
                 variants={fadeUp}
                 whileHover={{ y: -8, borderColor: 'rgba(212,175,55,0.15)' }}
-                className="p-5 md:p-8 rounded-2xl md:rounded-3xl glass border border-white/[0.04] transition-all duration-600 group"
+                className="p-5 md:p-8 rounded-2xl md:rounded-3xl glass border border-ink/[0.04] transition-all duration-600 group"
               >
                 <div className="w-11 h-11 rounded-xl bg-gold/[0.08] flex items-center justify-center mb-5 group-hover:bg-gold/[0.15] transition-colors duration-500">
                   <Icon size={19} className="text-gold" />
@@ -176,7 +175,7 @@ const HotelShowcase = ({ selectedHotel, onBack }) => {
                 <h5 className="text-gold font-arabic font-bold text-base md:text-lg mb-2">
                   {card.title}
                 </h5>
-                <p className="text-white/30 text-sm font-arabic leading-relaxed">
+                <p className="text-muted text-sm font-arabic leading-relaxed">
                   {card.desc}
                 </p>
               </motion.div>

@@ -16,6 +16,16 @@ const ImageSlider = ({ images }) => {
 
   const shouldPlay = isAutoPlaying && !isPaused && !fullscreenSrc;
 
+  useEffect(() => {
+    setSelectedIndex(0);
+    setDirection(1);
+    setFullscreenSrc(null);
+  }, [images]);
+
+  useEffect(() => {
+    return () => setFullscreenSrc(null);
+  }, []);
+
   const safeSrc = (src) => {
     try {
       return decodeURI(src) === src ? encodeURI(src) : src;
@@ -84,7 +94,7 @@ const ImageSlider = ({ images }) => {
       <div className="w-full max-w-6xl mx-auto space-y-5">
         {/* Main Slide Area */}
         <div
-          className="relative group rounded-[1.75rem] overflow-hidden border border-white/[0.06] bg-navy-dark slider-shadow"
+          className="relative group rounded-[1.75rem] overflow-hidden border border-ink/[0.06] bg-subtle slider-shadow"
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
           onTouchStart={handleTouchStart}
@@ -92,7 +102,7 @@ const ImageSlider = ({ images }) => {
           onTouchEnd={handleTouchEnd}
         >
           {shouldPlay && images.length > 1 && (
-            <div className="absolute top-0 left-0 right-0 h-[3px] bg-white/[0.04] z-30">
+            <div className="absolute top-0 left-0 right-0 h-[3px] bg-ink/[0.04] z-30">
               <div
                 key={`p-${selectedIndex}`}
                 className="h-full bg-gradient-to-r from-gold via-gold-light to-gold rounded-full"
@@ -120,8 +130,7 @@ const ImageSlider = ({ images }) => {
                   className="w-full h-full object-cover select-none"
                   draggable={false}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-navy-dark/60 via-transparent to-navy-dark/10 pointer-events-none" />
-                <div className="absolute inset-0 bg-gradient-to-r from-navy-dark/10 via-transparent to-navy-dark/10 pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/5 pointer-events-none" />
               </motion.div>
             </AnimatePresence>
 
@@ -155,7 +164,7 @@ const ImageSlider = ({ images }) => {
             {images.length > 1 ? (
               <button
                 onClick={() => setIsAutoPlaying((p) => !p)}
-                className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-navy/50 backdrop-blur-xl border border-white/10 flex items-center justify-center text-gold/60 hover:text-gold transition-colors duration-300"
+                className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-black/30 backdrop-blur-xl border border-white/15 flex items-center justify-center text-gold/70 hover:text-gold transition-colors duration-300"
               >
                 {isAutoPlaying ? <Pause size={13} /> : <Play size={13} />}
               </button>
@@ -163,7 +172,7 @@ const ImageSlider = ({ images }) => {
               <div />
             )}
 
-            {images.length > 1 && (
+            {images.length > 1 && images.length <= 12 && (
               <div className="flex items-center gap-1.5 md:gap-2">
                 {images.map((_, i) => (
                   <button
@@ -173,33 +182,31 @@ const ImageSlider = ({ images }) => {
                       'rounded-full transition-all duration-500',
                       selectedIndex === i
                         ? 'w-7 md:w-9 h-2 md:h-2.5 bg-gold shadow-[0_0_14px_rgba(212,175,55,0.5)]'
-                        : 'w-2 h-2 md:w-2.5 md:h-2.5 bg-white/20 hover:bg-white/40'
+                        : 'w-2 h-2 md:w-2.5 md:h-2.5 bg-white/25 hover:bg-white/50'
                     )}
                   />
                 ))}
               </div>
             )}
 
-            <div className="bg-navy/45 backdrop-blur-xl px-3 md:px-4 py-1 md:py-1.5 rounded-full border border-white/[0.08] text-[11px] md:text-xs font-inter text-gold/70 tabular-nums tracking-wider">
+            <div className="bg-black/30 backdrop-blur-xl px-3 md:px-4 py-1 md:py-1.5 rounded-full border border-white/15 text-[11px] md:text-xs font-inter text-gold/80 tabular-nums tracking-wider">
               {String(selectedIndex + 1).padStart(2, '0')} / {String(images.length).padStart(2, '0')}
             </div>
           </div>
         </div>
 
-        {/* Thumbnail Strip */}
+        {/* Thumbnail Strip — capped at 20 */}
         {images.length > 1 && (
           <div className="flex justify-center gap-1.5 md:gap-2.5 overflow-x-auto py-2 px-2 no-scrollbar">
-            {images.map((src, index) => (
-              <motion.button
+            {images.slice(0, 20).map((src, index) => (
+              <button
                 key={index}
                 onClick={() => goTo(index)}
-                whileHover={{ y: -5 }}
-                whileTap={{ scale: 0.93 }}
                 className={cn(
                   'relative flex-shrink-0 w-12 h-9 md:w-[5.5rem] md:h-14 rounded-lg md:rounded-xl overflow-hidden border-2 transition-all duration-500',
                   selectedIndex === index
                     ? 'border-gold shadow-[0_0_20px_rgba(212,175,55,0.25)] ring-1 ring-gold/15'
-                    : 'border-white/[0.04] opacity-35 hover:opacity-75 grayscale hover:grayscale-0'
+                    : 'border-ink/[0.06] opacity-40 hover:opacity-80 grayscale hover:grayscale-0'
                 )}
               >
                 <img
@@ -209,8 +216,13 @@ const ImageSlider = ({ images }) => {
                   loading="lazy"
                   draggable={false}
                 />
-              </motion.button>
+              </button>
             ))}
+            {images.length > 20 && (
+              <div className="flex-shrink-0 w-12 h-9 md:w-[5.5rem] md:h-14 rounded-lg md:rounded-xl bg-ink/[0.04] border-2 border-ink/[0.06] flex items-center justify-center text-muted text-xs font-inter">
+                +{images.length - 20}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -223,7 +235,7 @@ const ImageSlider = ({ images }) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-[200] bg-navy-dark/95 backdrop-blur-2xl flex items-center justify-center cursor-zoom-out p-4"
+            className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-2xl flex items-center justify-center cursor-zoom-out p-4"
             onClick={() => setFullscreenSrc(null)}
           >
             <motion.img
@@ -238,7 +250,7 @@ const ImageSlider = ({ images }) => {
             />
             <button
               onClick={() => setFullscreenSrc(null)}
-              className="absolute top-6 right-6 w-11 h-11 rounded-full glass-strong flex items-center justify-center text-white/70 hover:text-gold transition-colors text-xl"
+              className="absolute top-6 right-6 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition-colors text-xl"
             >
               ✕
             </button>

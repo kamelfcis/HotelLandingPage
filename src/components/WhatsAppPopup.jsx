@@ -18,7 +18,7 @@ const WhatsAppPopup = ({ isOpen, onClose }) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-[150] bg-navy-dark/80"
+            className="fixed inset-0 z-[150] bg-black/50 dark:bg-navy-dark/80"
             onClick={onClose}
           />
 
@@ -31,7 +31,7 @@ const WhatsAppPopup = ({ isOpen, onClose }) => {
             className="fixed inset-0 z-[151] flex items-center justify-center p-4 pointer-events-none"
           >
             <div
-              className="relative w-full max-w-md rounded-3xl overflow-hidden pointer-events-auto"
+              className="relative w-full max-w-md rounded-3xl overflow-hidden pointer-events-auto shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Green header strip */}
@@ -51,20 +51,20 @@ const WhatsAppPopup = ({ isOpen, onClose }) => {
               </div>
 
               {/* Content */}
-              <div className="bg-navy-dark border border-white/[0.06] border-t-0 rounded-b-3xl px-8 pt-6 pb-8 -mt-4 relative z-10">
-                <div className="bg-navy-light/50 rounded-2xl p-5 mb-6 border border-white/[0.04]">
+              <div className="bg-surface border border-ink/[0.06] border-t-0 rounded-b-3xl px-8 pt-6 pb-8 -mt-4 relative z-10">
+                <div className="bg-subtle rounded-2xl p-5 mb-6 border border-ink/[0.04]">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-10 h-10 rounded-full bg-[#25D366]/15 flex items-center justify-center flex-shrink-0">
                       <WhatsAppIcon className="w-5 h-5 text-[#25D366]" />
                     </div>
                     <div>
-                      <p className="text-white font-arabic font-bold text-sm">إدارة نوادي وفنادق المدفعية</p>
-                      <p className="text-white/40 text-xs font-arabic">داي يوز / حجز إسكان</p>
+                      <p className="text-ink font-arabic font-bold text-sm">إدارة نوادي وفنادق المدفعية</p>
+                      <p className="text-muted text-xs font-arabic">داي يوز / حجز إسكان</p>
                     </div>
                   </div>
 
-                  <div className="bg-navy/60 rounded-xl p-4 border border-white/[0.04]">
-                    <p className="text-white/70 text-sm font-arabic leading-relaxed text-right">
+                  <div className="bg-page rounded-xl p-4 border border-ink/[0.04]">
+                    <p className="text-muted text-sm font-arabic leading-relaxed text-right">
                       مرحباً بك! 👋
                       <br />
                       يسعدنا خدمتك، تواصل معنا الآن للحجز أو الاستفسار عن خدماتنا الفندقية.
@@ -82,7 +82,7 @@ const WhatsAppPopup = ({ isOpen, onClose }) => {
                   ابدأ المحادثة
                 </a>
 
-                <p className="text-center text-white/25 text-xs font-arabic mt-4" dir="ltr">
+                <p className="text-center text-faint text-xs font-arabic mt-4" dir="ltr">
                   01090900516
                 </p>
               </div>

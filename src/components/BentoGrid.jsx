@@ -8,10 +8,6 @@ const BentoGrid = ({ onSelectHotel }) => {
   const cardRefs = useRef([]);
   const glareRefs = useRef([]);
 
-  /**
-   * 3D Tilt: rotates card based on mouse position within the element.
-   * Also moves a radial-gradient "glare" spotlight to the cursor position.
-   */
   const handleMouseMove = useCallback((e, index) => {
     const card = cardRefs.current[index];
     const glare = glareRefs.current[index];
@@ -63,10 +59,10 @@ const BentoGrid = ({ onSelectHotel }) => {
             transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
             viewport={{ once: true }}
           >
-            <span className="text-gold/45 text-sm font-arabic tracking-widest mb-4 block">
+            <span className="text-gold/60 text-sm font-arabic tracking-widest mb-4 block">
               وجهاتنا المتميزة
             </span>
-            <h2 className="text-4xl sm:text-5xl md:text-7xl font-arabic font-bold text-white leading-tight">
+            <h2 className="text-4xl sm:text-5xl md:text-7xl font-arabic font-bold text-ink leading-tight">
               اختر <span className="text-gradient-gold">وجهتك</span>
             </h2>
             <div className="h-1 w-20 md:w-24 bg-gradient-to-l from-gold to-transparent rounded-full mt-5 mr-0 ml-auto" />
@@ -95,7 +91,7 @@ const BentoGrid = ({ onSelectHotel }) => {
                 }}
                 onMouseMove={(e) => handleMouseMove(e, index)}
                 onMouseLeave={() => handleMouseLeave(index)}
-                className="tilt-card relative h-[400px] sm:h-[480px] rounded-3xl overflow-hidden border border-white/[0.06] group card-shadow"
+                className="tilt-card relative h-[400px] sm:h-[480px] rounded-3xl overflow-hidden border border-ink/[0.06] group card-shadow"
               >
                 {/* Hotel Image */}
                 <img
@@ -105,9 +101,9 @@ const BentoGrid = ({ onSelectHotel }) => {
                   loading="lazy"
                 />
 
-                {/* Gradient Overlays */}
-                <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/50 to-transparent z-10 opacity-90 group-hover:opacity-70 transition-opacity duration-700" />
-                <div className="absolute inset-0 bg-gradient-to-br from-navy/20 to-transparent z-10" />
+                {/* Gradient Overlays — stay dark for text readability over images */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-10 opacity-90 group-hover:opacity-75 transition-opacity duration-700" />
+                <div className="absolute inset-0 bg-gradient-to-br from-black/10 to-transparent z-10" />
 
                 {/* Mouse-follow glare spotlight */}
                 <div
@@ -120,9 +116,8 @@ const BentoGrid = ({ onSelectHotel }) => {
                 {/* Hover inner glow */}
                 <div className="absolute inset-0 rounded-3xl z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-700 shadow-[inset_0_0_50px_rgba(212,175,55,0.06)]" />
 
-                {/* Content Overlay */}
+                {/* Content Overlay — white text since it's over dark images */}
                 <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8 z-30 text-right">
-                  {/* Category count badge */}
                   <div className="inline-flex items-center gap-2 glass-gold px-3 py-1 rounded-full mb-4 text-gold text-xs font-arabic">
                     <Eye size={12} />
                     {hotel.categories.length} أقسام
@@ -131,7 +126,7 @@ const BentoGrid = ({ onSelectHotel }) => {
                   <h3 className="text-2xl sm:text-3xl font-arabic font-bold text-white mb-2 group-hover:text-gold transition-colors duration-500">
                     {hotel.displayName}
                   </h3>
-                  <p className="text-white/40 text-sm font-arabic line-clamp-2 leading-relaxed group-hover:text-white/60 transition-colors duration-500">
+                  <p className="text-white/50 text-sm font-arabic line-clamp-2 leading-relaxed group-hover:text-white/70 transition-colors duration-500">
                     {hotel.description}
                   </p>
 

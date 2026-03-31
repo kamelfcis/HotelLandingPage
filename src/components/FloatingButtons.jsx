@@ -74,7 +74,7 @@ const FloatingButtons = () => {
             >
               {btn.icon}
 
-              <span className="absolute left-full ml-3 px-3 py-1.5 rounded-lg bg-navy-dark/95 border border-white/10 text-white text-xs font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+              <span className="absolute left-full ml-3 px-3 py-1.5 rounded-lg bg-surface border border-ink/10 text-ink text-xs font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none shadow-md">
                 {btn.label}
               </span>
             </motion.a>

@@ -4,6 +4,7 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
@@ -17,6 +18,12 @@ export default {
           light: '#112240',
           dark: '#020C1B',
         },
+        page: 'rgb(var(--c-page) / <alpha-value>)',
+        surface: 'rgb(var(--c-surface) / <alpha-value>)',
+        ink: 'rgb(var(--c-ink) / <alpha-value>)',
+        muted: 'rgb(var(--c-muted) / <alpha-value>)',
+        faint: 'rgb(var(--c-faint) / <alpha-value>)',
+        subtle: 'rgb(var(--c-subtle) / <alpha-value>)',
       },
       fontFamily: {
         arabic: ['Cairo', 'Amiri', 'serif'],

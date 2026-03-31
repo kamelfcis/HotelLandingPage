@@ -10,7 +10,7 @@ const HERO_IMAGES = [
 const SLIDE_DURATION = 6000;
 
 const Hero = () => {
-  const title = 'نوادي و فنادق المدفعية';
+  const title = 'المدفعية نوادي و فنادق ';
   const words = title.split(' ');
   const bgRef = useRef(null);
   const sectionRef = useRef(null);
@@ -72,9 +72,9 @@ const Hero = () => {
         </div>
       </div>
 
-      {/* Gradient Overlays */}
-      <div className="absolute inset-0 z-[1] bg-gradient-to-b from-navy/75 via-navy/25 to-navy" />
-      <div className="absolute inset-0 z-[1] bg-gradient-to-r from-navy/60 via-transparent to-navy/60" />
+      {/* Gradient Overlays — subtle darkening for text readability */}
+      <div className="absolute inset-0 z-[1] bg-gradient-to-b from-black/50 via-black/10 to-black/60" />
+      <div className="absolute inset-0 z-[1] bg-gradient-to-r from-black/20 via-transparent to-black/20" />
 
       {/* Decorations — reduced to 2 shapes + 3 particles */}
       <div className="absolute inset-0 z-[2] overflow-hidden pointer-events-none hidden md:block">
@@ -100,7 +100,7 @@ const Hero = () => {
         ))}
       </div>
 
-      {/* Content */}
+      {/* Content — white text always since it's over dark images */}
       <div className="relative z-10 text-center px-4 max-w-5xl mx-auto">
         <motion.div
           initial={{ scaleX: 0, opacity: 0 }}
@@ -121,9 +121,7 @@ const Hero = () => {
                 ease: [0.16, 1, 0.3, 1],
               }}
               className="inline-block text-4xl sm:text-5xl md:text-7xl lg:text-[5.5rem] font-bold font-arabic text-white"
-              style={{
-                textShadow: '0 4px 40px rgba(0,0,0,0.5)',
-              }}
+              style={{ textShadow: '0 4px 40px rgba(0,0,0,0.5)' }}
             >
               {word}
             </motion.span>
@@ -185,7 +183,12 @@ const Hero = () => {
         </motion.div>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-navy to-transparent z-[3]" />
+      {/* Bottom edge — crisp decorative divider */}
+      <div className="absolute bottom-0 left-0 right-0 z-[3]">
+        <svg viewBox="0 0 1440 80" fill="none" preserveAspectRatio="none" className="w-full h-16 md:h-20 block">
+          <path d="M0 80V40C240 0 480 20 720 40C960 60 1200 20 1440 0V80H0Z" className="fill-page" />
+        </svg>
+      </div>
     </section>
   );
 };
