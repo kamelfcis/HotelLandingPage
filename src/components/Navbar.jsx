@@ -2,11 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '../lib/utils';
 
-const Navbar = () => {
+const Navbar = ({ onBookNow }) => {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 60);
+    let ticking = false;
+    const onScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          setScrolled(window.scrollY > 60);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
@@ -17,9 +26,9 @@ const Navbar = () => {
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.9, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
-        'fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-5 md:px-10 transition-all duration-700',
+        'fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-5 md:px-10 transition-[padding,background,box-shadow] duration-500',
         scrolled
-          ? 'py-3 glass-strong shadow-2xl shadow-navy-dark/50'
+          ? 'py-3 glass-strong shadow-lg shadow-navy-dark/30'
           : 'py-5 bg-transparent'
       )}
     >
@@ -64,7 +73,8 @@ const Navbar = () => {
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        className="px-5 md:px-7 py-2 md:py-2.5 bg-gold/[0.08] border border-gold/25 text-gold rounded-full text-xs md:text-sm font-arabic font-bold hover:bg-gold hover:text-navy transition-all duration-600 hover:shadow-[0_0_30px_rgba(212,175,55,0.3)]"
+        onClick={onBookNow}
+        className="px-5 md:px-7 py-2 md:py-2.5 bg-gold/[0.08] border border-gold/25 text-gold rounded-full text-xs md:text-sm font-arabic font-bold hover:bg-gold hover:text-navy transition-colors duration-300 hover:shadow-[0_0_30px_rgba(212,175,55,0.3)]"
       >
         احجز الآن
       </motion.button>

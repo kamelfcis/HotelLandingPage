@@ -57,25 +57,7 @@ const HotelShowcase = ({ selectedHotel, onBack }) => {
     >
       {/* ── Ambient Background Layer ── */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="ambient-orb w-[600px] h-[600px] bg-gold/5 -top-[10%] -right-[5%]" />
-        <div
-          className="ambient-orb w-[500px] h-[500px] bg-navy-light/40 -bottom-[10%] -left-[15%]"
-          style={{ animationDelay: '3s' }}
-        />
-        <div
-          className="ambient-orb w-[350px] h-[350px] bg-gold/[0.03] top-[40%] left-[25%]"
-          style={{ animationDelay: '7s' }}
-        />
-
-        {/* Subtle luxury grid pattern */}
-        <div
-          className="absolute inset-0 opacity-[0.018]"
-          style={{
-            backgroundImage:
-              'linear-gradient(rgba(212,175,55,0.25) 1px, transparent 1px), linear-gradient(90deg, rgba(212,175,55,0.25) 1px, transparent 1px)',
-            backgroundSize: '64px 64px',
-          }}
-        />
+        <div className="ambient-orb w-[500px] h-[500px] bg-gold/5 -top-[10%] -right-[5%]" />
       </div>
 
       {/* ── Content with Stagger Reveal ── */}
@@ -159,10 +141,10 @@ const HotelShowcase = ({ selectedHotel, onBack }) => {
           <AnimatePresence mode="wait">
             <motion.div
               key={activeCategory}
-              initial={{ opacity: 0, y: 24, filter: 'blur(12px)' }}
-              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-              exit={{ opacity: 0, y: -20, filter: 'blur(12px)' }}
-              transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -16 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             >
               <div className="mb-6 md:mb-8 flex items-center gap-4">
                 <span className="hidden md:block w-14 h-px bg-gold/25" />

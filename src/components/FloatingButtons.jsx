@@ -17,7 +17,16 @@ const FloatingButtons = () => {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setVisible(window.scrollY > 300);
+    let ticking = false;
+    const onScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          setVisible(window.scrollY > 300);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener('scroll', onScroll);
@@ -28,11 +37,10 @@ const FloatingButtons = () => {
       id: 'whatsapp',
       icon: <WhatsAppIcon />,
       label: 'WhatsApp',
-      href: 'https://wa.me/201234567890',
+      href: 'https://wa.me/201090900516',
       bg: 'bg-[#25D366]',
       hoverBg: 'hover:bg-[#1ebe57]',
-      shadow: 'shadow-[0_8px_32px_rgba(37,211,102,0.35)]',
-      hoverShadow: 'hover:shadow-[0_8px_40px_rgba(37,211,102,0.5)]',
+      shadow: 'shadow-[0_4px_20px_rgba(37,211,102,0.3)]',
     },
     {
       id: 'facebook',
@@ -41,8 +49,7 @@ const FloatingButtons = () => {
       href: 'https://facebook.com',
       bg: 'bg-[#1877F2]',
       hoverBg: 'hover:bg-[#166fe0]',
-      shadow: 'shadow-[0_8px_32px_rgba(24,119,242,0.35)]',
-      hoverShadow: 'hover:shadow-[0_8px_40px_rgba(24,119,242,0.5)]',
+      shadow: 'shadow-[0_4px_20px_rgba(24,119,242,0.3)]',
     },
   ];
 
@@ -57,28 +64,19 @@ const FloatingButtons = () => {
               target="_blank"
               rel="noopener noreferrer"
               aria-label={btn.label}
-              initial={{ opacity: 0, scale: 0.3, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.3, y: 20 }}
-              transition={{
-                type: 'spring',
-                stiffness: 260,
-                damping: 20,
-                delay: i * 0.08,
-              }}
-              whileHover={{ scale: 1.12 }}
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.5 }}
+              transition={{ duration: 0.3, delay: i * 0.05 }}
+              whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.92 }}
-              className={`group relative w-14 h-14 rounded-full ${btn.bg} ${btn.hoverBg} ${btn.shadow} ${btn.hoverShadow} flex items-center justify-center text-white transition-all duration-300`}
+              className={`group relative w-14 h-14 rounded-full ${btn.bg} ${btn.hoverBg} ${btn.shadow} flex items-center justify-center text-white transition-colors duration-200`}
             >
               {btn.icon}
 
-              {/* Tooltip */}
-              <span className="absolute left-full ml-3 px-3 py-1.5 rounded-lg bg-navy-dark/90 backdrop-blur-xl border border-white/10 text-white text-xs font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all duration-300 pointer-events-none">
+              <span className="absolute left-full ml-3 px-3 py-1.5 rounded-lg bg-navy-dark/95 border border-white/10 text-white text-xs font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
                 {btn.label}
               </span>
-
-              {/* Ping animation ring */}
-              <span className={`absolute inset-0 rounded-full ${btn.bg} animate-ping opacity-20`} />
             </motion.a>
           ))}
       </AnimatePresence>

@@ -51,11 +51,7 @@ const BentoGrid = ({ onSelectHotel }) => {
     >
       {/* Section ambient background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="ambient-orb w-[650px] h-[650px] bg-gold/5 -top-[200px] -right-[220px]" />
-        <div
-          className="ambient-orb w-[500px] h-[500px] bg-navy-light/35 bottom-[-120px] -left-[200px]"
-          style={{ animationDelay: '5s' }}
-        />
+        <div className="ambient-orb w-[500px] h-[500px] bg-gold/5 -top-[200px] -right-[220px]" />
       </div>
 
       <div className="max-w-7xl mx-auto relative z-10">
@@ -105,7 +101,8 @@ const BentoGrid = ({ onSelectHotel }) => {
                 <img
                   src={encodeURI(hotel.heroImage)}
                   alt={hotel.displayName}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.08]"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
+                  loading="lazy"
                 />
 
                 {/* Gradient Overlays */}
