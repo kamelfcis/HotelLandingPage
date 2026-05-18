@@ -10,7 +10,7 @@ export async function fetchHotelsWithImages() {
     return buildHotelsFromDisk();
   }
 
-  const [{ data: imgRows, error: imgErr }, { data: hotelRows, error: hotelErr }] =
+  const [{ data: imgRows, error: imgErr }, { data: hotelRows }, { data: orderRows }] =
     await Promise.all([
       supabase
         .from('category_images')
@@ -19,6 +19,9 @@ export async function fetchHotelsWithImages() {
       supabase
         .from('hotels')
         .select('id, hero_image_url'),
+      supabase
+        .from('hotel_category_orders')
+        .select('hotel_id, ordered_keys'),
     ]);
 
   if (imgErr) {
@@ -26,7 +29,8 @@ export async function fetchHotelsWithImages() {
     return buildHotelsFromDisk();
   }
 
-  const heroMap = new Map((hotelRows || []).map((h) => [h.id, h.hero_image_url]));
+  const heroMap  = new Map((hotelRows  || []).map((h) => [h.id, h.hero_image_url]));
+  const orderMap = new Map((orderRows  || []).map((r) => [r.hotel_id, r.ordered_keys]));
 
   const imgMap = new Map();
   for (const row of imgRows || []) {
@@ -48,6 +52,15 @@ export async function fetchHotelsWithImages() {
     } else {
       const firstWith = hotel.categories.find((c) => c.count > 0);
       hotel.heroImage = firstWith?.images?.[0] || '';
+    }
+
+    // Apply saved category order if available
+    const savedOrder = orderMap.get(hotel.id);
+    if (savedOrder?.length) {
+      const catMap = new Map(hotel.categories.map((c) => [c.id, c]));
+      const ordered = savedOrder.map((key) => catMap.get(key)).filter(Boolean);
+      const extra   = hotel.categories.filter((c) => !savedOrder.includes(c.id));
+      hotel.categories = [...ordered, ...extra];
     }
   });
 
@@ -243,6 +256,38 @@ export async function uploadHeroSlide(file, onProgress) {
     await supabase.storage.from(BUCKET).remove([storagePath]);
     throw insErr;
   }
+}
+
+/* ── category ordering ───────────────────────────────────────────── */
+
+/**
+ * Fetch the saved category key order for a hotel.
+ * Returns null when no custom order has been saved.
+ * @param {string} hotelId
+ * @returns {Promise<string[]|null>}
+ */
+export async function fetchCategoryOrder(hotelId) {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from('hotel_category_orders')
+    .select('ordered_keys')
+    .eq('hotel_id', hotelId)
+    .single();
+  if (error) return null;
+  return data?.ordered_keys ?? null;
+}
+
+/**
+ * Persist the category display order for a hotel.
+ * @param {string} hotelId
+ * @param {string[]} orderedKeys
+ */
+export async function saveCategoryOrder(hotelId, orderedKeys) {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { error } = await supabase
+    .from('hotel_category_orders')
+    .upsert({ hotel_id: hotelId, ordered_keys: orderedKeys, updated_at: new Date().toISOString() });
+  if (error) throw error;
 }
 
 /** @param {{ id: string, storage_path: string }} row */

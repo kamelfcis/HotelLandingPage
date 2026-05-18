@@ -14,6 +14,8 @@ import {
   uploadHeroSlide,
   deleteHeroSlide,
   HERO_SLIDES_MAX,
+  fetchCategoryOrder,
+  saveCategoryOrder,
 } from '../services/hotelsService';
 import { cn } from '../lib/utils';
 import {
@@ -35,6 +37,10 @@ import {
   KeyRound,
   Eye,
   EyeOff,
+  ArrowUp,
+  ArrowDown,
+  GripVertical,
+  ListOrdered,
 } from 'lucide-react';
 
 function isAdminUser(user) {
@@ -686,6 +692,12 @@ export default function AdminPage() {
   const [heroImageUrl, setHeroImageUrl] = useState(null);
   const [settingHeroId, setSettingHeroId] = useState(null);
 
+  /* ── category order state ────────────────────────────────────── */
+  const [categoryOrder, setCategoryOrder] = useState(
+    () => HOTEL_DEFINITIONS[0]?.categories.map((c) => c.id) ?? []
+  );
+  const [savingOrder, setSavingOrder] = useState(false);
+
   /* ── hero slider state ────────────────────────────────────────── */
   const [slides, setSlides] = useState([]);
   const [loadingSlides, setLoadingSlides] = useState(false);
@@ -753,13 +765,65 @@ export default function AdminPage() {
     if (userId && userIsAdmin) { loadImages(); loadSlides(); }
   }, [loadImages, loadSlides]);
 
+  /* ── load/save category order ────────────────────────────────── */
+  const loadCategoryOrder = useCallback(async (hId) => {
+    const hotel = HOTEL_DEFINITIONS.find((x) => x.id === hId);
+    const defaultOrder = hotel?.categories.map((c) => c.id) ?? [];
+    try {
+      const saved = await fetchCategoryOrder(hId);
+      if (saved?.length) {
+        // Merge: saved order first, then any new categories not yet saved
+        const merged = [
+          ...saved.filter((k) => defaultOrder.includes(k)),
+          ...defaultOrder.filter((k) => !saved.includes(k)),
+        ];
+        setCategoryOrder(merged);
+      } else {
+        setCategoryOrder(defaultOrder);
+      }
+    } catch {
+      setCategoryOrder(defaultOrder);
+    }
+  }, []);
+
+  const handleSaveOrder = async () => {
+    setSavingOrder(true);
+    try {
+      await saveCategoryOrder(hotelId, categoryOrder);
+      addToast('تم حفظ ترتيب الأقسام');
+    } catch (err) {
+      addToast(err.message || 'فشل حفظ الترتيب', 'error');
+    } finally {
+      setSavingOrder(false);
+    }
+  };
+
+  const moveCategoryUp = (idx) => {
+    if (idx === 0) return;
+    setCategoryOrder((prev) => {
+      const next = [...prev];
+      [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+      return next;
+    });
+  };
+
+  const moveCategoryDown = (idx) => {
+    setCategoryOrder((prev) => {
+      if (idx >= prev.length - 1) return prev;
+      const next = [...prev];
+      [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+      return next;
+    });
+  };
+
   useEffect(() => {
     const h = HOTEL_DEFINITIONS.find((x) => x.id === hotelId);
     if (h?.categories?.length) {
       const still = h.categories.some((c) => c.id === categoryKey);
       if (!still) setCategoryKey(h.categories[0].id);
     }
-  }, [hotelId]);
+    if (userId && userIsAdmin) loadCategoryOrder(hotelId);
+  }, [hotelId, userId, userIsAdmin, loadCategoryOrder]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -1154,23 +1218,92 @@ export default function AdminPage() {
 
             {/* category tabs */}
             <section>
-              <p className="text-xs font-medium text-white/40 uppercase tracking-widest mb-4">نوع الغرفة</p>
+              <p className="text-xs font-medium text-white/40 uppercase tracking-widest mb-4">نوع الغرفة / القسم</p>
               <div className="flex flex-wrap gap-2">
-                {(selectedHotel?.categories || []).map((c) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => setCategoryKey(c.id)}
-                    className={cn(
-                      'rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200 border',
-                      categoryKey === c.id
-                        ? 'bg-gold text-navy border-gold shadow-[0_0_16px_rgba(212,175,55,0.25)]'
-                        : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white/90'
-                    )}
-                  >
-                    {c.name}
-                  </button>
-                ))}
+                {categoryOrder.map((key) => {
+                  const c = selectedHotel?.categories.find((x) => x.id === key);
+                  if (!c) return null;
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setCategoryKey(c.id)}
+                      className={cn(
+                        'rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200 border',
+                        categoryKey === c.id
+                          ? 'bg-gold text-navy border-gold shadow-[0_0_16px_rgba(212,175,55,0.25)]'
+                          : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white/90'
+                      )}
+                    >
+                      {c.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* category reorder panel */}
+            <section>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <ListOrdered size={14} className="text-white/40" />
+                  <p className="text-xs font-medium text-white/40 uppercase tracking-widest">ترتيب الأقسام</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSaveOrder}
+                  disabled={savingOrder}
+                  className="flex items-center gap-1.5 rounded-xl bg-gold/10 border border-gold/25 px-3.5 py-1.5 text-xs font-semibold text-gold hover:bg-gold/20 transition-colors disabled:opacity-50"
+                >
+                  {savingOrder ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
+                  {savingOrder ? 'جاري الحفظ…' : 'حفظ الترتيب'}
+                </button>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                {categoryOrder.map((key, idx) => {
+                  const c = selectedHotel?.categories.find((x) => x.id === key);
+                  if (!c) return null;
+                  return (
+                    <div
+                      key={key}
+                      className={cn(
+                        'flex items-center gap-3 rounded-xl border px-4 py-2.5 transition-colors',
+                        categoryKey === key
+                          ? 'border-gold/30 bg-gold/5'
+                          : 'border-white/[0.06] bg-white/[0.02]'
+                      )}
+                    >
+                      <GripVertical size={14} className="text-white/20 shrink-0" />
+                      <span
+                        className="flex-1 text-sm cursor-pointer hover:text-gold/80 transition-colors"
+                        style={{ color: categoryKey === key ? 'var(--gold)' : 'rgba(255,255,255,0.65)' }}
+                        onClick={() => setCategoryKey(key)}
+                      >
+                        {c.name}
+                      </span>
+                      <div className="flex gap-1">
+                        <button
+                          type="button"
+                          onClick={() => moveCategoryUp(idx)}
+                          disabled={idx === 0}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/10 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+                          aria-label="تحريك للأعلى"
+                        >
+                          <ArrowUp size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveCategoryDown(idx)}
+                          disabled={idx === categoryOrder.length - 1}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/10 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+                          aria-label="تحريك للأسفل"
+                        >
+                          <ArrowDown size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </section>
 
