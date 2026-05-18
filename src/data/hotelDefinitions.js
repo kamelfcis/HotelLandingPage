@@ -8,9 +8,9 @@ export const HOTEL_DEFINITIONS = [
     name: 'KingToot',
     displayName: 'كينج توت',
     description:
-      'فخامة ملكية على ساحل البحر الأحمر، تجمع بين التراث والحداثة.',
+      'فخامة ملكية ، تجمع بين التراث والحداثة.',
     categories: [
-      { id: 'gallery', name: 'معرض الصور', folder: 'gallery' },
+      { id: 'gallery', name: 'صور الفندق', folder: 'gallery' },
       { id: 'chalet', name: 'شاليه', folder: 'الشاليه' },
       { id: 'suite', name: 'سويت', folder: 'سويت' },
       { id: 'room', name: 'غرف', folder: 'الغرف' },
@@ -23,7 +23,7 @@ export const HOTEL_DEFINITIONS = [
     description:
       'استمتع بأجواء الطبيعة الساحرة والهدوء التام في قلب الطبيعة.',
     categories: [
-      { id: 'gallery', name: 'معرض الصور', folder: 'gallery' },
+      { id: 'gallery', name: 'صور الفندق', folder: 'gallery' },
       { id: 'apt2', name: 'شقة 2 غرفه', folder: 'RocketBeach شقة 2 غرفه' },
       { id: 'apt3', name: 'شقة 3 غرفه', folder: 'RocketBeach شقة 3 غرفه' },
       { id: 'villa', name: 'فيلا', folder: 'RocketBeach فيلا' },
