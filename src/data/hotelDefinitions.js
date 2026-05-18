@@ -1,28 +1,8 @@
 /**
- * Auto-scan all hotel images from public/assets/hotels/ at build time.
- * Vite's import.meta.glob resolves matching file paths during compilation,
- * so we never need to hardcode image counts — just add/remove files from
- * the folders and the app picks them up automatically.
+ * Static hotel + room-type metadata (no images).
+ * Images come from Supabase when configured, else from legacy disk scan.
  */
-const imageGlob = import.meta.glob(
-  '/public/assets/hotels/**/*.{jpeg,jpg,png,webp}',
-  { eager: false }
-);
-
-const allImagePaths = Object.keys(imageGlob)
-  .map((p) => p.replace(/^\/public/, ''))
-  .sort((a, b) => {
-    const numA = parseInt(a.split('/').pop()) || 0;
-    const numB = parseInt(b.split('/').pop()) || 0;
-    return numA - numB;
-  });
-
-function getImages(hotelName, folderName) {
-  const prefix = `/assets/hotels/${hotelName}/${folderName}/`;
-  return allImagePaths.filter((p) => p.startsWith(prefix));
-}
-
-export const hotels = [
+export const HOTEL_DEFINITIONS = [
   {
     id: 'king-toot',
     name: 'KingToot',
@@ -61,14 +41,3 @@ export const hotels = [
     ],
   },
 ];
-
-hotels.forEach((hotel) => {
-  hotel.categories = hotel.categories
-    .map((cat) => {
-      const images = getImages(hotel.name, cat.folder);
-      return { ...cat, images, count: images.length };
-    })
-    .filter((cat) => cat.count > 0);
-
-  hotel.heroImage = hotel.categories[0]?.images?.[0] || '';
-});

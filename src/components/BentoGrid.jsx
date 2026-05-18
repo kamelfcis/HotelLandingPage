@@ -1,10 +1,9 @@
 import React, { useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { hotels } from '../data/hotels';
 import { cn } from '../lib/utils';
 import { Eye, ArrowLeft } from 'lucide-react';
 
-const BentoGrid = ({ onSelectHotel }) => {
+const BentoGrid = ({ hotels = [], loading, onSelectHotel }) => {
   const cardRefs = useRef([]);
   const glareRefs = useRef([]);
 
@@ -70,36 +69,53 @@ const BentoGrid = ({ onSelectHotel }) => {
         </div>
 
         {/* 3D Tilt Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-          {hotels.map((hotel, index) => (
-            <motion.div
-              key={hotel.id}
-              initial={{ opacity: 0, y: 80 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{
-                delay: index * 0.12,
-                duration: 0.85,
-                ease: [0.16, 1, 0.3, 1],
-              }}
-              viewport={{ once: true }}
-              className="cursor-pointer"
-              onClick={() => onSelectHotel(hotel)}
-            >
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+            {[0, 1, 2].map((i) => (
               <div
-                ref={(el) => {
-                  cardRefs.current[index] = el;
+                key={i}
+                className="h-[400px] sm:h-[480px] rounded-3xl bg-subtle border border-ink/[0.06] animate-pulse"
+              />
+            ))}
+          </div>
+        ) : hotels.length === 0 ? (
+          <p className="text-center text-muted font-arabic py-16">
+            لا توجد وجهات متاحة حالياً.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+            {hotels.map((hotel, index) => (
+              <motion.div
+                key={hotel.id}
+                initial={{ opacity: 0, y: 80 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{
+                  delay: index * 0.12,
+                  duration: 0.85,
+                  ease: [0.16, 1, 0.3, 1],
                 }}
-                onMouseMove={(e) => handleMouseMove(e, index)}
-                onMouseLeave={() => handleMouseLeave(index)}
-                className="tilt-card relative h-[400px] sm:h-[480px] rounded-3xl overflow-hidden border border-ink/[0.06] group card-shadow"
+                viewport={{ once: true }}
+                className="cursor-pointer"
+                onClick={() => onSelectHotel(hotel)}
               >
-                {/* Hotel Image */}
-                <img
-                  src={encodeURI(hotel.heroImage)}
-                  alt={hotel.displayName}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
-                  loading="lazy"
-                />
+                <div
+                  ref={(el) => {
+                    cardRefs.current[index] = el;
+                  }}
+                  onMouseMove={(e) => handleMouseMove(e, index)}
+                  onMouseLeave={() => handleMouseLeave(index)}
+                  className="tilt-card relative h-[400px] sm:h-[480px] rounded-3xl overflow-hidden border border-ink/[0.06] group card-shadow"
+                >
+                  {hotel.heroImage ? (
+                    <img
+                      src={encodeURI(hotel.heroImage)}
+                      alt={hotel.displayName}
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-gradient-to-br from-navy/80 via-subtle to-gold/10" />
+                  )}
 
                 {/* Gradient Overlays — stay dark for text readability over images */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-10 opacity-90 group-hover:opacity-75 transition-opacity duration-700" />
@@ -143,8 +159,9 @@ const BentoGrid = ({ onSelectHotel }) => {
                 </div>
               </div>
             </motion.div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

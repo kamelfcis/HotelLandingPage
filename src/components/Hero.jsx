@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const HERO_IMAGES = [
+const FALLBACK_IMAGES = [
   '/assets/nada.jpg',
   '/assets/rocketbeach.jpg',
   encodeURI('/assets/فندق كينج توت.jpg'),
@@ -9,9 +9,9 @@ const HERO_IMAGES = [
 
 const SLIDE_DURATION = 6000;
 
-const Hero = () => {
-  const title = 'المدفعية نوادي و فنادق ';
-  const words = title.split(' ');
+const Hero = ({ images }) => {
+  const HERO_IMAGES = images?.length ? images : FALLBACK_IMAGES;
+  const words = ['نوادي', 'و', 'فنادق', 'المدفعية'];
   const bgRef = useRef(null);
   const sectionRef = useRef(null);
   const [current, setCurrent] = useState(0);
@@ -109,7 +109,7 @@ const Hero = () => {
           className="w-28 h-px bg-gradient-to-r from-transparent via-gold to-transparent mx-auto mb-10"
         />
 
-        <div className="flex flex-row-reverse gap-3 md:gap-5 justify-center items-center flex-wrap">
+        <div className="flex gap-3 md:gap-5 justify-center items-center flex-wrap" dir="rtl">
           {words.map((word, i) => (
             <motion.span
               key={i}

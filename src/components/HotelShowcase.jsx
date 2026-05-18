@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ImageSlider from './ImageSlider';
 import { cn } from '../lib/utils';
-import { Sparkles, Star, Shield, ArrowRight } from 'lucide-react';
+import { Sparkles, Star, Shield } from 'lucide-react';
 
 const stagger = {
   initial: {},
@@ -21,9 +21,17 @@ const fadeUp = {
 };
 
 const HotelShowcase = ({ selectedHotel, onBack }) => {
-  const [activeCategory, setActiveCategory] = useState(
-    selectedHotel.categories[0].id
-  );
+  const defaultCat =
+    selectedHotel.categories.find((c) => (c.images?.length ?? 0) > 0)?.id ??
+    selectedHotel.categories[0]?.id;
+
+  const [activeCategory, setActiveCategory] = useState(defaultCat);
+  const sectionRef = useRef(null);
+
+  const handleBack = () => {
+    if (sectionRef.current) sectionRef.current.style.pointerEvents = 'none';
+    onBack();
+  };
 
   const currentCategory = selectedHotel.categories.find(
     (c) => c.id === activeCategory
@@ -49,9 +57,10 @@ const HotelShowcase = ({ selectedHotel, onBack }) => {
 
   return (
     <motion.section
+      ref={sectionRef}
       initial={{ opacity: 0, y: 60 }}
       animate={{ opacity: 1, y: 0, transition: { type: 'spring', damping: 26, stiffness: 140 } }}
-      exit={{ opacity: 0, pointerEvents: 'none', transition: { duration: 0.15 } }}
+      exit={{ opacity: 0, transition: { duration: 0.2 } }}
       className="fixed inset-0 z-50 bg-page overflow-y-auto overflow-x-hidden safe-area-padding"
     >
       {/* Ambient Background */}
@@ -71,7 +80,7 @@ const HotelShowcase = ({ selectedHotel, onBack }) => {
           variants={fadeUp}
           whileHover={{ x: -10 }}
           whileTap={{ scale: 0.94 }}
-          onClick={onBack}
+          onClick={handleBack}
           className="flex items-center gap-3 text-gold font-arabic font-bold group mb-8 md:mb-12"
         >
           <div className="w-8 h-[2px] bg-gold group-hover:w-16 transition-all duration-600" />
@@ -153,7 +162,13 @@ const HotelShowcase = ({ selectedHotel, onBack }) => {
                 <span className="w-14 h-px bg-gold/25" />
               </div>
 
-              <ImageSlider images={currentCategory?.images || []} />
+              {(currentCategory?.images?.length ?? 0) > 0 ? (
+                <ImageSlider images={currentCategory.images} />
+              ) : (
+                <div className="rounded-[1.75rem] border border-ink/[0.08] bg-subtle py-24 text-center text-muted font-arabic">
+                  لا توجد صور لهذا النوع بعد. يمكن رفع الصور من لوحة الإدارة.
+                </div>
+              )}
             </motion.div>
           </AnimatePresence>
         </motion.div>
