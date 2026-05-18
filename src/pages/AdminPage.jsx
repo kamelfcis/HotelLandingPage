@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, createPortal } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import { HOTEL_DEFINITIONS } from '../data/hotelDefinitions';
@@ -133,6 +134,7 @@ function Toasts({ toasts }) {
 function LoginScreen({ onLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -157,81 +159,234 @@ function LoginScreen({ onLogin }) {
     }
   };
 
+  const stagger = {
+    hidden: {},
+    show: { transition: { staggerChildren: 0.09, delayChildren: 0.25 } },
+  };
+  const fadeUp = {
+    hidden: { opacity: 0, y: 22 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] } },
+  };
+
   return (
     <div
       dir="rtl"
-      className="min-h-screen bg-navy flex items-center justify-center p-6 font-arabic"
-      style={{
-        background: 'radial-gradient(ellipse at 60% 40%, #112240 0%, #0A192F 60%, #020C1B 100%)',
-      }}
+      className="min-h-screen flex items-center justify-center font-arabic overflow-hidden relative"
+      style={{ background: 'radial-gradient(ellipse at 60% 35%, #112240 0%, #0A192F 55%, #020C1B 100%)' }}
     >
-      {/* gold orb */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-gold/[0.04] blur-3xl pointer-events-none" />
+      {/* animated background orbs */}
+      <motion.div
+        animate={{ scale: [1, 1.18, 1], opacity: [0.035, 0.07, 0.035] }}
+        transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute -top-32 -right-32 w-[480px] h-[480px] rounded-full pointer-events-none"
+        style={{ background: 'var(--gold)', filter: 'blur(80px)' }}
+      />
+      <motion.div
+        animate={{ scale: [1, 1.25, 1], opacity: [0.025, 0.055, 0.025] }}
+        transition={{ duration: 13, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
+        className="absolute -bottom-40 -left-20 w-[380px] h-[380px] rounded-full pointer-events-none"
+        style={{ background: '#1e40af', filter: 'blur(90px)' }}
+      />
+      <motion.div
+        animate={{ y: [0, -30, 0], opacity: [0.02, 0.05, 0.02] }}
+        transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 1.5 }}
+        className="absolute top-1/2 left-1/3 w-[260px] h-[260px] rounded-full pointer-events-none"
+        style={{ background: 'var(--gold)', filter: 'blur(70px)' }}
+      />
 
-      <div className="relative w-full max-w-sm">
-        {/* logo area */}
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gold/10 border border-gold/20 mb-4">
-            <Hotel size={28} className="text-gold" />
-          </div>
-          <h1 className="text-2xl font-bold text-white tracking-wide">لوحة التحكم</h1>
-          <p className="text-sm text-white/40 mt-1">إدارة صور الغرف والفنادق</p>
-        </div>
-
-        <form onSubmit={submit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-white/50 mb-1.5 tracking-wide uppercase">
-              البريد الإلكتروني
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/20 outline-none focus:border-gold/60 focus:bg-white/8 transition-colors"
-              placeholder="admin@example.com"
-              required
-              autoComplete="email"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-white/50 mb-1.5 tracking-wide uppercase">
-              كلمة المرور
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/20 outline-none focus:border-gold/60 transition-colors"
-              placeholder="••••••••"
-              required
-              autoComplete="current-password"
-            />
-          </div>
-
-          {error && (
-            <div className="flex items-center gap-2 rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3">
-              <XCircle size={15} className="text-red-400 shrink-0" />
-              <p className="text-sm text-red-400">{error}</p>
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={busy}
-            className="w-full rounded-xl bg-gold py-3.5 font-bold text-navy-dark hover:bg-gold-light active:bg-gold-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-2 flex items-center justify-center gap-2"
-          >
-            {busy && <Loader2 size={16} className="animate-spin" />}
-            {busy ? 'جاري الدخول…' : 'دخول'}
-          </button>
-        </form>
-
-        <div className="mt-6 text-center">
-          <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-white/30 hover:text-gold/70 transition-colors">
-            <ChevronLeft size={14} />
-            العودة للموقع
-          </Link>
-        </div>
+      {/* floating dots — hidden on very small screens */}
+      <div className="absolute inset-0 pointer-events-none hidden sm:block">
+        {[
+          { left: '8%',  top: '18%', delay: 0 },
+          { left: '22%', top: '72%', delay: 0.5 },
+          { left: '78%', top: '25%', delay: 1 },
+          { left: '88%', top: '65%', delay: 1.5 },
+          { left: '50%', top: '10%', delay: 0.8 },
+          { left: '65%', top: '88%', delay: 0.3 },
+        ].map((dot, i) => (
+          <motion.div
+            key={i}
+            animate={{ y: [0, -14, 0], opacity: [0.15, 0.5, 0.15] }}
+            transition={{ duration: 3.5 + i * 0.4, repeat: Infinity, ease: 'easeInOut', delay: dot.delay }}
+            className="absolute w-1.5 h-1.5 rounded-full"
+            style={{ left: dot.left, top: dot.top, background: 'var(--gold)' }}
+          />
+        ))}
       </div>
+
+      {/* card wrapper */}
+      <motion.div
+        initial={{ opacity: 0, y: 36, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        className="relative w-full max-w-[360px] mx-4 sm:mx-auto"
+      >
+        {/* glowing border ring */}
+        <motion.div
+          animate={{ opacity: [0, 0.6, 0] }}
+          transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute -inset-px rounded-[26px] pointer-events-none"
+          style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.3), transparent 60%, rgba(212,175,55,0.15))', borderRadius: 26 }}
+        />
+
+        {/* glass card */}
+        <div
+          className="relative rounded-3xl border border-white/[0.07] p-7 sm:p-9"
+          style={{
+            background: 'rgba(10,25,47,0.75)',
+            backdropFilter: 'blur(28px)',
+            WebkitBackdropFilter: 'blur(28px)',
+            boxShadow: '0 40px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.07)',
+          }}
+        >
+          <motion.div variants={stagger} initial="hidden" animate="show">
+
+            {/* logo block */}
+            <motion.div variants={fadeUp} className="text-center mb-8">
+              {/* icon with corner accents */}
+              <div className="relative inline-flex mb-5">
+                <motion.div
+                  animate={{
+                    boxShadow: [
+                      '0 0 0px rgba(212,175,55,0)',
+                      '0 0 28px rgba(212,175,55,0.35)',
+                      '0 0 0px rgba(212,175,55,0)',
+                    ],
+                  }}
+                  transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
+                  className="w-[68px] h-[68px] rounded-2xl bg-gold/10 border border-gold/25 flex items-center justify-center"
+                >
+                  <Hotel size={30} className="text-gold" />
+                </motion.div>
+                <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 border-t-2 border-r-2 border-gold/55 rounded-tr" />
+                <span className="absolute -bottom-1.5 -left-1.5 w-3.5 h-3.5 border-b-2 border-l-2 border-gold/55 rounded-bl" />
+              </div>
+
+              <h1 className="text-2xl sm:text-[1.75rem] font-bold text-white tracking-wide leading-tight">
+                لوحة التحكم
+              </h1>
+              <div className="h-px w-14 bg-gradient-to-r from-transparent via-gold/50 to-transparent mx-auto mt-2.5 mb-2" />
+              <p className="text-[13px] text-white/35">إدارة صور الغرف والفنادق</p>
+            </motion.div>
+
+            {/* form */}
+            <form onSubmit={submit} className="space-y-4">
+
+              {/* email */}
+              <motion.div variants={fadeUp}>
+                <label className="block text-[10px] font-semibold text-white/40 mb-2 tracking-[0.15em] uppercase">
+                  البريد الإلكتروني
+                </label>
+                <div className="relative group">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full rounded-xl border border-white/10 bg-white/[0.06] px-4 py-3.5 text-white text-sm placeholder-white/20 outline-none focus:border-gold/50 focus:bg-white/[0.09] transition-all duration-300"
+                    placeholder="admin@example.com"
+                    required
+                    autoComplete="email"
+                  />
+                  <div className="absolute inset-0 rounded-xl border border-gold/0 group-focus-within:border-gold/25 transition-colors duration-400 pointer-events-none" />
+                </div>
+              </motion.div>
+
+              {/* password */}
+              <motion.div variants={fadeUp}>
+                <label className="block text-[10px] font-semibold text-white/40 mb-2 tracking-[0.15em] uppercase">
+                  كلمة المرور
+                </label>
+                <div className="relative group">
+                  <input
+                    type={showPass ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full rounded-xl border border-white/10 bg-white/[0.06] px-4 py-3.5 pl-12 text-white text-sm placeholder-white/20 outline-none focus:border-gold/50 focus:bg-white/[0.09] transition-all duration-300"
+                    placeholder="••••••••"
+                    required
+                    autoComplete="current-password"
+                  />
+                  <div className="absolute inset-0 rounded-xl border border-gold/0 group-focus-within:border-gold/25 transition-colors duration-400 pointer-events-none" />
+                  <button
+                    type="button"
+                    onClick={() => setShowPass((s) => !s)}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25 hover:text-white/55 transition-colors p-1"
+                    tabIndex={-1}
+                    aria-label={showPass ? 'إخفاء' : 'إظهار'}
+                  >
+                    {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
+              </motion.div>
+
+              {/* error */}
+              <AnimatePresence mode="wait">
+                {error && (
+                  <motion.div
+                    key="err"
+                    initial={{ opacity: 0, y: -6, height: 0 }}
+                    animate={{ opacity: 1, y: 0, height: 'auto' }}
+                    exit={{ opacity: 0, y: -6, height: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="flex items-start gap-2.5 rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3">
+                      <XCircle size={15} className="text-red-400 shrink-0 mt-0.5" />
+                      <p className="text-[13px] text-red-400 leading-snug">{error}</p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* submit */}
+              <motion.div variants={fadeUp} className="pt-1">
+                <motion.button
+                  type="submit"
+                  disabled={busy}
+                  whileHover={{ scale: busy ? 1 : 1.02, boxShadow: busy ? undefined : '0 12px 40px rgba(212,175,55,0.4)' }}
+                  whileTap={{ scale: busy ? 1 : 0.97 }}
+                  className="relative w-full rounded-xl bg-gold py-4 font-bold text-navy text-sm disabled:opacity-55 disabled:cursor-not-allowed overflow-hidden flex items-center justify-center gap-2 transition-shadow duration-300"
+                  style={{ boxShadow: '0 8px 28px rgba(212,175,55,0.25)' }}
+                >
+                  {/* shimmer sweep */}
+                  {!busy && (
+                    <motion.span
+                      animate={{ x: ['-120%', '220%'] }}
+                      transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut', repeatDelay: 1.5 }}
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -skew-x-12 pointer-events-none"
+                    />
+                  )}
+                  {busy ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      <span>جاري الدخول…</span>
+                    </>
+                  ) : (
+                    <span>دخول</span>
+                  )}
+                </motion.button>
+              </motion.div>
+            </form>
+
+            {/* back link */}
+            <motion.div variants={fadeUp} className="mt-7 text-center">
+              <Link
+                to="/"
+                className="inline-flex items-center gap-1.5 text-[13px] text-white/25 hover:text-gold/60 transition-colors duration-300 group"
+              >
+                <motion.span
+                  animate={{ x: [0, -4, 0] }}
+                  transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+                >
+                  <ChevronLeft size={14} className="text-white/20 group-hover:text-gold/50 transition-colors" />
+                </motion.span>
+                العودة للموقع
+              </Link>
+            </motion.div>
+
+          </motion.div>
+        </div>
+      </motion.div>
     </div>
   );
 }
