@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef, createPortal } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
