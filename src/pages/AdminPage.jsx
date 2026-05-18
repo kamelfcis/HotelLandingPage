@@ -30,6 +30,9 @@ import {
   Images,
   X,
   ZoomIn,
+  KeyRound,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 
 function isAdminUser(user) {
@@ -390,11 +393,127 @@ function ImageCard({ row, onDelete, deleting, isHero, onSetHero, settingHero, on
   );
 }
 
+/* ── password input with show/hide toggle ──────────────────────── */
+function PasswordInput({ value, onChange, placeholder, autoComplete }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative">
+      <input
+        type={show ? 'text' : 'password'}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        autoComplete={autoComplete}
+        required
+        className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/20 outline-none focus:border-gold/60 transition-colors pr-4 pl-11"
+      />
+      <button
+        type="button"
+        onClick={() => setShow((s) => !s)}
+        className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+        tabIndex={-1}
+      >
+        {show ? <EyeOff size={16} /> : <Eye size={16} />}
+      </button>
+    </div>
+  );
+}
+
+/* ── change password form ──────────────────────────────────────── */
+function ChangePasswordForm({ addToast }) {
+  const [newPass, setNewPass] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (newPass.length < 8) {
+      setError('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
+      return;
+    }
+    if (newPass !== confirm) {
+      setError('كلمتا المرور غير متطابقتين');
+      return;
+    }
+    setBusy(true);
+    try {
+      const { error: err } = await supabase.auth.updateUser({ password: newPass });
+      if (err) throw err;
+      setNewPass('');
+      setConfirm('');
+      addToast('تم تغيير كلمة المرور بنجاح');
+    } catch (e) {
+      setError(e.message || 'فشل تغيير كلمة المرور');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="max-w-md">
+      <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-6 space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-gold/10 border border-gold/20 flex items-center justify-center shrink-0">
+            <KeyRound size={16} className="text-gold" />
+          </div>
+          <div>
+            <p className="font-bold text-white">تغيير كلمة المرور</p>
+            <p className="text-xs text-white/35 mt-0.5">يجب أن تكون 8 أحرف على الأقل</p>
+          </div>
+        </div>
+
+        <form onSubmit={submit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-white/50 mb-1.5 tracking-wide uppercase">
+              كلمة المرور الجديدة
+            </label>
+            <PasswordInput
+              value={newPass}
+              onChange={(e) => setNewPass(e.target.value)}
+              placeholder="••••••••"
+              autoComplete="new-password"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-white/50 mb-1.5 tracking-wide uppercase">
+              تأكيد كلمة المرور
+            </label>
+            <PasswordInput
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              placeholder="••••••••"
+              autoComplete="new-password"
+            />
+          </div>
+
+          {error && (
+            <div className="flex items-center gap-2 rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3">
+              <XCircle size={15} className="text-red-400 shrink-0" />
+              <p className="text-sm text-red-400">{error}</p>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={busy}
+            className="w-full rounded-xl bg-gold py-3 font-bold text-navy-dark hover:bg-gold-light active:bg-gold-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
+          >
+            {busy && <Loader2 size={15} className="animate-spin" />}
+            {busy ? 'جاري الحفظ…' : 'حفظ كلمة المرور'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 /* ── main dashboard ────────────────────────────────────────────── */
 export default function AdminPage() {
   const [session, setSession] = useState(null);
   const [authReady, setAuthReady] = useState(false);
-  const [activeTab, setActiveTab] = useState('hero'); // 'hero' | 'hotels'
+  const [activeTab, setActiveTab] = useState('hero'); // 'hero' | 'hotels' | 'settings'
 
   /* ── hotel images state ───────────────────────────────────────── */
   const [hotelId, setHotelId] = useState(HOTEL_DEFINITIONS[0]?.id || '');
@@ -679,6 +798,19 @@ export default function AdminPage() {
             <Images size={16} />
             صور الفنادق
           </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('settings')}
+            className={cn(
+              'flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-all duration-200',
+              activeTab === 'settings'
+                ? 'bg-gold text-navy shadow-[0_0_16px_rgba(212,175,55,0.3)]'
+                : 'text-white/50 hover:text-white/80'
+            )}
+          >
+            <KeyRound size={16} />
+            الإعدادات
+          </button>
         </div>
 
         {/* ════════════════════════════════════════════════════════
@@ -812,6 +944,18 @@ export default function AdminPage() {
                 </div>
               )}
             </section>
+          </div>
+        )}
+
+        {/* ════════════════════════════════════════════════════════
+            TAB: SETTINGS
+        ════════════════════════════════════════════════════════ */}
+        {activeTab === 'settings' && (
+          <div className="space-y-8">
+            <div>
+              <p className="text-xs font-medium text-white/40 uppercase tracking-widest mb-6">إعدادات الحساب</p>
+              <ChangePasswordForm addToast={addToast} />
+            </div>
           </div>
         )}
 
