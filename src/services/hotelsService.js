@@ -388,6 +388,27 @@ export async function saveCategoryOrder(hotelId, orderedKeys) {
   if (failed?.error) throw failed.error;
 }
 
+/**
+ * Persist image display order within a category via category_images.sort_order.
+ * @param {string} hotelId
+ * @param {string} categoryKey
+ * @param {string[]} orderedImageIds
+ */
+export async function saveCategoryImageOrder(hotelId, categoryKey, orderedImageIds) {
+  if (!supabase) throw new Error('Supabase not configured');
+  const updates = orderedImageIds.map((id, index) =>
+    supabase
+      .from('category_images')
+      .update({ sort_order: index })
+      .eq('id', id)
+      .eq('hotel_id', hotelId)
+      .eq('category_key', categoryKey)
+  );
+  const results = await Promise.all(updates);
+  const failed = results.find((r) => r.error);
+  if (failed?.error) throw failed.error;
+}
+
 /** @param {{ id: string, storage_path: string }} row */
 export async function deleteHeroSlide(row) {
   if (!supabase) throw new Error('Supabase not configured');

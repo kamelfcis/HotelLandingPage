@@ -19,6 +19,7 @@ import {
   deleteHeroSlide,
   HERO_SLIDES_MAX,
   saveCategoryOrder,
+  saveCategoryImageOrder,
 } from '../services/hotelsService';
 import { cn } from '../lib/utils';
 import {
@@ -703,6 +704,10 @@ export default function AdminPage() {
   const [categoryOrder, setCategoryOrder] = useState([]);
   const [savingOrder, setSavingOrder] = useState(false);
 
+  /* ── image order state ───────────────────────────────────────── */
+  const [imageOrder, setImageOrder] = useState([]);
+  const [savingImageOrder, setSavingImageOrder] = useState(false);
+
   /* ── category CRUD state ─────────────────────────────────────── */
   const [newCategoryKey, setNewCategoryKey] = useState('');
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -829,6 +834,10 @@ export default function AdminPage() {
     }
   }, [hotelId, userId, userIsAdmin, loadCategories]);
 
+  useEffect(() => {
+    setImageOrder(rows.map((r) => r.id));
+  }, [rows]);
+
   const handleSaveOrder = async () => {
     setSavingOrder(true);
     try {
@@ -916,6 +925,42 @@ export default function AdminPage() {
       return next;
     });
   };
+
+  const moveImageUp = (idx) => {
+    if (idx === 0) return;
+    setImageOrder((prev) => {
+      const next = [...prev];
+      [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+      return next;
+    });
+  };
+
+  const moveImageDown = (idx) => {
+    setImageOrder((prev) => {
+      if (idx >= prev.length - 1) return prev;
+      const next = [...prev];
+      [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+      return next;
+    });
+  };
+
+  const handleSaveImageOrder = async () => {
+    setSavingImageOrder(true);
+    try {
+      await saveCategoryImageOrder(hotelId, categoryKey, imageOrder);
+      await loadImages();
+      addToast('تم حفظ ترتيب الصور');
+    } catch (err) {
+      addToast(err.message || 'فشل حفظ ترتيب الصور', 'error');
+    } finally {
+      setSavingImageOrder(false);
+    }
+  };
+
+  const orderedRows = imageOrder
+    .map((id) => rows.find((r) => r.id === id))
+    .filter(Boolean);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setSession(null);
@@ -1536,20 +1581,87 @@ export default function AdminPage() {
                   <p className="text-sm text-white/30">لا توجد صور لهذا النوع بعد</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
-                  {rows.map((row) => (
-                    <ImageCard
-                      key={row.id}
-                      row={row}
-                      onDelete={() => onDelete(row)}
-                      deleting={actionId === row.id}
-                      isHero={heroImageUrl === row.public_url}
-                      onSetHero={() => onSetHero(row)}
-                      settingHero={settingHeroId === row.id}
-                      onPreview={() => setLightboxUrl(row.public_url)}
-                    />
-                  ))}
-                </div>
+                <>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
+                    {orderedRows.map((row) => (
+                      <ImageCard
+                        key={row.id}
+                        row={row}
+                        onDelete={() => onDelete(row)}
+                        deleting={actionId === row.id}
+                        isHero={heroImageUrl === row.public_url}
+                        onSetHero={() => onSetHero(row)}
+                        settingHero={settingHeroId === row.id}
+                        onPreview={() => setLightboxUrl(row.public_url)}
+                      />
+                    ))}
+                  </div>
+
+                  {rows.length > 1 && (
+                    <div className="mt-8 pt-6 border-t border-white/[0.06]">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                          <ListOrdered size={14} className="text-white/40" />
+                          <p className="text-xs font-medium text-white/40 uppercase tracking-widest">ترتيب الصور</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleSaveImageOrder}
+                          disabled={savingImageOrder}
+                          className="flex items-center gap-1.5 rounded-xl bg-gold/10 border border-gold/25 px-3.5 py-1.5 text-xs font-semibold text-gold hover:bg-gold/20 transition-colors disabled:opacity-50"
+                        >
+                          {savingImageOrder ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
+                          {savingImageOrder ? 'جاري الحفظ…' : 'حفظ ترتيب الصور'}
+                        </button>
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        {imageOrder.map((id, idx) => {
+                          const row = rows.find((r) => r.id === id);
+                          if (!row) return null;
+                          return (
+                            <div
+                              key={id}
+                              className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 transition-colors"
+                            >
+                              <GripVertical size={14} className="text-white/20 shrink-0" />
+                              <img
+                                src={row.public_url}
+                                alt=""
+                                className="w-10 h-10 rounded-lg object-cover border border-white/10 shrink-0"
+                              />
+                              <span className="flex-1 text-sm text-white/65">
+                                صورة {idx + 1}
+                                {heroImageUrl === row.public_url && (
+                                  <span className="mr-2 text-xs text-gold/70">(رئيسية)</span>
+                                )}
+                              </span>
+                              <div className="flex gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => moveImageUp(idx)}
+                                  disabled={idx === 0}
+                                  className="w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/10 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+                                  aria-label="تحريك للأعلى"
+                                >
+                                  <ArrowUp size={13} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => moveImageDown(idx)}
+                                  disabled={idx === imageOrder.length - 1}
+                                  className="w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/10 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+                                  aria-label="تحريك للأسفل"
+                                >
+                                  <ArrowDown size={13} />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </section>
           </div>
