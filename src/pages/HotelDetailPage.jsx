@@ -9,6 +9,7 @@ export default function HotelDetailPage() {
   const navigate = useNavigate();
 
   const [hotel, setHotel] = useState(null);
+  const [hotels, setHotels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -18,9 +19,10 @@ export default function HotelDetailPage() {
       setLoading(true);
       setError(null);
       try {
-        const hotels = await fetchHotelsWithImages();
+        const allHotels = await fetchHotelsWithImages();
         if (cancelled) return;
-        const found = hotels.find((h) => h.id === hotelId);
+        setHotels(allHotels);
+        const found = allHotels.find((h) => h.id === hotelId);
         if (!found) {
           setError('لم يتم العثور على الفندق');
         } else {
@@ -68,6 +70,7 @@ export default function HotelDetailPage() {
       <HotelShowcase
         key={hotel.id}
         selectedHotel={hotel}
+        otherHotels={hotels.filter((h) => h.id !== hotelId)}
         onBack={() => navigate('/')}
       />
     </AnimatePresence>

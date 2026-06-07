@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import ImageSlider from './ImageSlider';
 import { cn } from '../lib/utils';
-import { Sparkles, Star, Shield } from 'lucide-react';
+import { Sparkles, Star, Shield, Eye, ArrowLeft } from 'lucide-react';
 
 const stagger = {
   initial: {},
@@ -20,7 +21,7 @@ const fadeUp = {
   },
 };
 
-const HotelShowcase = ({ selectedHotel, onBack }) => {
+const HotelShowcase = ({ selectedHotel, otherHotels = [], onBack }) => {
   const defaultCat =
     selectedHotel.categories.find((c) => (c.images?.length ?? 0) > 0)?.id ??
     selectedHotel.categories[0]?.id;
@@ -174,7 +175,7 @@ const HotelShowcase = ({ selectedHotel, onBack }) => {
         </motion.div>
 
         {/* Feature Info Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-12 md:mb-20">
           {infoCards.map((card, i) => {
             const Icon = card.icon;
             return (
@@ -197,6 +198,71 @@ const HotelShowcase = ({ selectedHotel, onBack }) => {
             );
           })}
         </div>
+
+        {/* Other Hotels */}
+        {otherHotels.length > 0 && (
+          <motion.div variants={fadeUp} className="pb-12 md:pb-16">
+            <div className="text-right mb-10 md:mb-14">
+              <span className="text-gold/60 text-sm font-arabic tracking-widest mb-3 block">
+                استمر في الاستكشاف
+              </span>
+              <h3 className="text-2xl sm:text-3xl md:text-4xl font-arabic font-bold text-ink leading-tight">
+                فنادق أخرى <span className="text-gradient-gold">قد تعجبك</span>
+              </h3>
+              <div className="h-1 w-16 md:w-20 bg-gradient-to-l from-gold to-transparent rounded-full mt-4 mr-0 ml-auto" />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 md:gap-6">
+              {otherHotels.map((hotel) => (
+                <Link
+                  key={hotel.id}
+                  to={`/hotel/${hotel.id}`}
+                  className="group block rounded-2xl md:rounded-3xl overflow-hidden border border-ink/[0.06] card-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/40"
+                >
+                  <div className="relative h-52 sm:h-60 md:h-64">
+                    {hotel.heroImage ? (
+                      <img
+                        src={encodeURI(hotel.heroImage)}
+                        alt={hotel.displayName}
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 bg-gradient-to-br from-navy/80 via-subtle to-gold/10" />
+                    )}
+
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-10 opacity-90 group-hover:opacity-75 transition-opacity duration-700" />
+                    <div className="absolute inset-0 rounded-2xl md:rounded-3xl z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-700 shadow-[inset_0_0_50px_rgba(212,175,55,0.06)]" />
+
+                    <div className="absolute bottom-0 left-0 right-0 p-5 md:p-6 z-20 text-right">
+                      <div className="inline-flex items-center gap-2 glass-gold px-3 py-1 rounded-full mb-3 text-gold text-xs font-arabic">
+                        <Eye size={12} />
+                        {hotel.categories.length} أقسام
+                      </div>
+
+                      <h4 className="text-xl sm:text-2xl font-arabic font-bold text-white mb-1.5 group-hover:text-gold transition-colors duration-500">
+                        {hotel.displayName}
+                      </h4>
+                      <p className="text-white/50 text-sm font-arabic line-clamp-2 leading-relaxed group-hover:text-white/70 transition-colors duration-500">
+                        {hotel.description}
+                      </p>
+
+                      <div className="mt-4 flex items-center justify-end gap-2">
+                        <span className="text-sm font-arabic text-gold font-bold">
+                          استكشف الآن
+                        </span>
+                        <ArrowLeft
+                          size={15}
+                          className="text-gold group-hover:-translate-x-2 transition-transform duration-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </motion.div>
+        )}
       </motion.div>
     </motion.section>
   );
