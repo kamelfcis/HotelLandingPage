@@ -57,7 +57,6 @@ const Navbar = ({ onBookNow }) => {
         {[
           { label: 'الرئيسية', href: '#' },
           { label: 'وجهاتنا', href: '#destinations' },
-          { label: 'عن الإدارة', href: '#about' },
           { label: 'اتصل بنا', href: '#contact' },
         ].map((item, i) => (
           <a
