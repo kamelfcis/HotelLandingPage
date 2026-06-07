@@ -11,7 +11,6 @@ const SLIDE_DURATION = 6000;
 
 const Hero = ({ images }) => {
   const HERO_IMAGES = images?.length ? images : FALLBACK_IMAGES;
-  const words = ['نوادي', 'و', 'فنادق', 'المدفعية'];
   const bgRef = useRef(null);
   const sectionRef = useRef(null);
   const [current, setCurrent] = useState(0);
@@ -109,24 +108,20 @@ const Hero = ({ images }) => {
           className="w-28 h-px bg-gradient-to-r from-transparent via-gold to-transparent mx-auto mb-10"
         />
 
-        <div className="flex gap-3 md:gap-5 justify-center items-center flex-wrap" dir="rtl">
-          {words.map((word, i) => (
-            <motion.span
-              key={i}
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                delay: i * 0.15 + 0.4,
-                duration: 0.8,
-                ease: [0.16, 1, 0.3, 1],
-              }}
-              className="inline-block text-4xl sm:text-5xl md:text-7xl lg:text-[5.5rem] font-bold font-arabic text-white"
-              style={{ textShadow: '0 4px 40px rgba(0,0,0,0.5)' }}
-            >
-              {word}
-            </motion.span>
-          ))}
-        </div>
+        <motion.h1
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            delay: 0.4,
+            duration: 0.8,
+            ease: [0.16, 1, 0.3, 1],
+          }}
+          className="text-4xl sm:text-5xl md:text-7xl lg:text-[5.5rem] font-bold font-arabic text-white"
+          style={{ textShadow: '0 4px 40px rgba(0,0,0,0.5)' }}
+          dir="rtl"
+        >
+          دار المدفعية
+        </motion.h1>
 
         <motion.p
           initial={{ opacity: 0, y: 20 }}
