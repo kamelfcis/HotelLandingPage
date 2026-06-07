@@ -207,7 +207,7 @@ const HotelShowcase = ({ selectedHotel, otherHotels = [], onBack }) => {
                 استمر في الاستكشاف
               </span>
               <h3 className="text-2xl sm:text-3xl md:text-4xl font-arabic font-bold text-ink leading-tight">
-                فنادق أخرى <span className="text-gradient-gold">قد تعجبك</span>
+                واجهات اخري قد عجبك
               </h3>
               <div className="h-1 w-16 md:w-20 bg-gradient-to-l from-gold to-transparent rounded-full mt-4 mr-0 ml-auto" />
             </div>
