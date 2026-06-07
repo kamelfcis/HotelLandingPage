@@ -1,4 +1,4 @@
--- Stores admin-defined category display order per hotel
+-- Stores admin-defined category display order per hotel (legacy; ordering now lives on categories.sort_order)
 create table if not exists public.hotel_category_orders (
   hotel_id      text        primary key,
   ordered_keys  text[]      not null,

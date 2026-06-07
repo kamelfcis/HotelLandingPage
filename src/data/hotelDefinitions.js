@@ -1,6 +1,6 @@
 /**
- * Static hotel + room-type metadata (no images).
- * Images come from Supabase when configured, else from legacy disk scan.
+ * Legacy offline fallback only — used by hotelsLegacy.js when Supabase is not configured.
+ * Production loads hotels and categories from Supabase (hotels + categories tables).
  */
 export const HOTEL_DEFINITIONS = [
   {

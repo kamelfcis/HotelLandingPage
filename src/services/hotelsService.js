@@ -1,8 +1,15 @@
-import { HOTEL_DEFINITIONS } from '../data/hotelDefinitions.js';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient.js';
 import { buildHotelsFromDisk } from '../data/hotelsLegacy.js';
 
 const BUCKET = 'hotel-images';
+
+const CATEGORY_KEY_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+function assertCategoryKey(categoryKey) {
+  if (!CATEGORY_KEY_RE.test(categoryKey)) {
+    throw new Error('مفتاح القسم يجب أن يكون أحرف إنجليزية صغيرة وأرقام وشرطات فقط (مثل gallery)');
+  }
+}
 
 /** @returns {Promise<Array<object>>} */
 export async function fetchHotelsWithImages() {
@@ -10,27 +17,29 @@ export async function fetchHotelsWithImages() {
     return buildHotelsFromDisk();
   }
 
-  const [{ data: imgRows, error: imgErr }, { data: hotelRows }, { data: orderRows }] =
-    await Promise.all([
-      supabase
-        .from('category_images')
-        .select('hotel_id, category_key, public_url, sort_order')
-        .order('sort_order', { ascending: true }),
-      supabase
-        .from('hotels')
-        .select('id, hero_image_url'),
-      supabase
-        .from('hotel_category_orders')
-        .select('hotel_id, ordered_keys'),
-    ]);
+  const [
+    { data: hotelRows, error: hotelErr },
+    { data: catRows, error: catErr },
+    { data: imgRows, error: imgErr },
+  ] = await Promise.all([
+    supabase
+      .from('hotels')
+      .select('id, name, display_name, description, hero_image_url')
+      .order('id', { ascending: true }),
+    supabase
+      .from('categories')
+      .select('hotel_id, category_key, name, sort_order')
+      .order('sort_order', { ascending: true }),
+    supabase
+      .from('category_images')
+      .select('hotel_id, category_key, public_url, sort_order')
+      .order('sort_order', { ascending: true }),
+  ]);
 
-  if (imgErr) {
-    console.error('[hotelsService] category_images', imgErr);
+  if (hotelErr || catErr || imgErr) {
+    console.error('[hotelsService] fetch', hotelErr || catErr || imgErr);
     return buildHotelsFromDisk();
   }
-
-  const heroMap  = new Map((hotelRows  || []).map((h) => [h.id, h.hero_image_url]));
-  const orderMap = new Map((orderRows  || []).map((r) => [r.hotel_id, r.ordered_keys]));
 
   const imgMap = new Map();
   for (const row of imgRows || []) {
@@ -39,32 +48,132 @@ export async function fetchHotelsWithImages() {
     imgMap.get(key).push(row.public_url);
   }
 
-  const hotels = structuredClone(HOTEL_DEFINITIONS);
-  hotels.forEach((hotel) => {
-    hotel.categories = hotel.categories.map((cat) => {
-      const key = `${hotel.id}:${cat.id}`;
+  const catsByHotel = new Map();
+  for (const row of catRows || []) {
+    if (!catsByHotel.has(row.hotel_id)) catsByHotel.set(row.hotel_id, []);
+    catsByHotel.get(row.hotel_id).push(row);
+  }
+
+  return (hotelRows || []).map((h) => {
+    const categories = (catsByHotel.get(h.id) || []).map((c) => {
+      const key = `${h.id}:${c.category_key}`;
       const images = imgMap.get(key) || [];
-      return { ...cat, images, count: images.length };
+      return {
+        id: c.category_key,
+        name: c.name,
+        images,
+        count: images.length,
+      };
     });
-    const savedHero = heroMap.get(hotel.id);
-    if (savedHero) {
-      hotel.heroImage = savedHero;
-    } else {
-      const firstWith = hotel.categories.find((c) => c.count > 0);
-      hotel.heroImage = firstWith?.images?.[0] || '';
+
+    let heroImage = h.hero_image_url || '';
+    if (!heroImage) {
+      const firstWith = categories.find((c) => c.count > 0);
+      heroImage = firstWith?.images?.[0] || '';
     }
 
-    // Apply saved category order if available
-    const savedOrder = orderMap.get(hotel.id);
-    if (savedOrder?.length) {
-      const catMap = new Map(hotel.categories.map((c) => [c.id, c]));
-      const ordered = savedOrder.map((key) => catMap.get(key)).filter(Boolean);
-      const extra   = hotel.categories.filter((c) => !savedOrder.includes(c.id));
-      hotel.categories = [...ordered, ...extra];
-    }
+    return {
+      id: h.id,
+      name: h.name,
+      displayName: h.display_name,
+      description: h.description,
+      heroImage,
+      categories,
+    };
   });
+}
 
-  return hotels;
+/** @returns {Promise<Array<{id:string,name:string,display_name:string,description:string}>>} */
+export async function fetchHotels() {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from('hotels')
+    .select('id, name, display_name, description')
+    .order('id', { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+
+/**
+ * @param {string} hotelId
+ * @returns {Promise<Array<{hotel_id:string,category_key:string,name:string,sort_order:number}>>}
+ */
+export async function fetchCategoriesForHotel(hotelId) {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from('categories')
+    .select('hotel_id, category_key, name, sort_order')
+    .eq('hotel_id', hotelId)
+    .order('sort_order', { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+
+/**
+ * @param {string} hotelId
+ * @param {string} categoryKey
+ * @param {string} name
+ */
+export async function createCategory(hotelId, categoryKey, name) {
+  if (!supabase) throw new Error('Supabase not configured');
+  assertCategoryKey(categoryKey);
+
+  const { data: existing } = await supabase
+    .from('categories')
+    .select('category_key')
+    .eq('hotel_id', hotelId)
+    .eq('category_key', categoryKey)
+    .maybeSingle();
+  if (existing) throw new Error('هذا المفتاح مستخدم بالفعل لهذا الفندق');
+
+  const { data: maxRow } = await supabase
+    .from('categories')
+    .select('sort_order')
+    .eq('hotel_id', hotelId)
+    .order('sort_order', { ascending: false })
+    .limit(1);
+  const nextOrder = typeof maxRow?.[0]?.sort_order === 'number' ? maxRow[0].sort_order + 1 : 0;
+
+  const { error } = await supabase.from('categories').insert({
+    hotel_id: hotelId,
+    category_key: categoryKey,
+    name: name.trim(),
+    sort_order: nextOrder,
+  });
+  if (error) throw error;
+}
+
+/**
+ * @param {string} hotelId
+ * @param {string} categoryKey
+ * @param {{ name?: string }} updates
+ */
+export async function updateCategory(hotelId, categoryKey, updates) {
+  if (!supabase) throw new Error('Supabase not configured');
+  const patch = {};
+  if (updates.name != null) patch.name = updates.name.trim();
+  if (!Object.keys(patch).length) return;
+
+  const { error } = await supabase
+    .from('categories')
+    .update(patch)
+    .eq('hotel_id', hotelId)
+    .eq('category_key', categoryKey);
+  if (error) throw error;
+}
+
+/**
+ * @param {string} hotelId
+ * @param {string} categoryKey
+ */
+export async function deleteCategory(hotelId, categoryKey) {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { error } = await supabase
+    .from('categories')
+    .delete()
+    .eq('hotel_id', hotelId)
+    .eq('category_key', categoryKey);
+  if (error) throw error;
 }
 
 /**
@@ -261,33 +370,22 @@ export async function uploadHeroSlide(file, onProgress) {
 /* ── category ordering ───────────────────────────────────────────── */
 
 /**
- * Fetch the saved category key order for a hotel.
- * Returns null when no custom order has been saved.
- * @param {string} hotelId
- * @returns {Promise<string[]|null>}
- */
-export async function fetchCategoryOrder(hotelId) {
-  if (!supabase) return null;
-  const { data, error } = await supabase
-    .from('hotel_category_orders')
-    .select('ordered_keys')
-    .eq('hotel_id', hotelId)
-    .single();
-  if (error) return null;
-  return data?.ordered_keys ?? null;
-}
-
-/**
- * Persist the category display order for a hotel.
+ * Persist category display order via categories.sort_order.
  * @param {string} hotelId
  * @param {string[]} orderedKeys
  */
 export async function saveCategoryOrder(hotelId, orderedKeys) {
   if (!supabase) throw new Error('Supabase not configured');
-  const { error } = await supabase
-    .from('hotel_category_orders')
-    .upsert({ hotel_id: hotelId, ordered_keys: orderedKeys, updated_at: new Date().toISOString() });
-  if (error) throw error;
+  const updates = orderedKeys.map((categoryKey, index) =>
+    supabase
+      .from('categories')
+      .update({ sort_order: index })
+      .eq('hotel_id', hotelId)
+      .eq('category_key', categoryKey)
+  );
+  const results = await Promise.all(updates);
+  const failed = results.find((r) => r.error);
+  if (failed?.error) throw failed.error;
 }
 
 /** @param {{ id: string, storage_path: string }} row */

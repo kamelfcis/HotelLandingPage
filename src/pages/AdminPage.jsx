@@ -3,8 +3,12 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
-import { HOTEL_DEFINITIONS } from '../data/hotelDefinitions';
 import {
+  fetchHotels,
+  fetchCategoriesForHotel,
+  createCategory,
+  updateCategory,
+  deleteCategory,
   fetchCategoryImagesForAdmin,
   uploadCategoryImage,
   deleteCategoryImage,
@@ -14,7 +18,6 @@ import {
   uploadHeroSlide,
   deleteHeroSlide,
   HERO_SLIDES_MAX,
-  fetchCategoryOrder,
   saveCategoryOrder,
 } from '../services/hotelsService';
 import { cn } from '../lib/utils';
@@ -41,6 +44,8 @@ import {
   ArrowDown,
   GripVertical,
   ListOrdered,
+  Plus,
+  Pencil,
 } from 'lucide-react';
 
 function isAdminUser(user) {
@@ -678,10 +683,12 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('hero'); // 'hero' | 'hotels' | 'settings'
 
   /* ── hotel images state ───────────────────────────────────────── */
-  const [hotelId, setHotelId] = useState(HOTEL_DEFINITIONS[0]?.id || '');
-  const [categoryKey, setCategoryKey] = useState(
-    HOTEL_DEFINITIONS[0]?.categories[0]?.id || ''
-  );
+  const [hotels, setHotels] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loadingHotels, setLoadingHotels] = useState(false);
+  const [loadingCategories, setLoadingCategories] = useState(false);
+  const [hotelId, setHotelId] = useState('');
+  const [categoryKey, setCategoryKey] = useState('');
   const [rows, setRows] = useState([]);
   const [loadingList, setLoadingList] = useState(false);
   const [uploadActive, setUploadActive] = useState(false);
@@ -693,10 +700,17 @@ export default function AdminPage() {
   const [settingHeroId, setSettingHeroId] = useState(null);
 
   /* ── category order state ────────────────────────────────────── */
-  const [categoryOrder, setCategoryOrder] = useState(
-    () => HOTEL_DEFINITIONS[0]?.categories.map((c) => c.id) ?? []
-  );
+  const [categoryOrder, setCategoryOrder] = useState([]);
   const [savingOrder, setSavingOrder] = useState(false);
+
+  /* ── category CRUD state ─────────────────────────────────────── */
+  const [newCategoryKey, setNewCategoryKey] = useState('');
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [creatingCategory, setCreatingCategory] = useState(false);
+  const [editingKey, setEditingKey] = useState(null);
+  const [editingName, setEditingName] = useState('');
+  const [savingRename, setSavingRename] = useState(false);
+  const [deletingKey, setDeletingKey] = useState(null);
 
   /* ── hero slider state ────────────────────────────────────────── */
   const [slides, setSlides] = useState([]);
@@ -709,7 +723,9 @@ export default function AdminPage() {
 
   const [lightboxUrl, setLightboxUrl] = useState(null);
   const { toasts, add: addToast } = useToast();
-  const selectedHotel = HOTEL_DEFINITIONS.find((h) => h.id === hotelId);
+
+  const getCategoryName = (key) =>
+    categories.find((c) => c.category_key === key)?.name ?? key;
 
   const userId = session?.user?.id;
   const userIsAdmin = isAdminUser(session?.user);
@@ -748,6 +764,44 @@ export default function AdminPage() {
     }
   }, [userId, userIsAdmin]);
 
+  /* ── load hotels list ─────────────────────────────────────────── */
+  const loadHotels = useCallback(async () => {
+    if (!supabase || !userId || !userIsAdmin) return;
+    setLoadingHotels(true);
+    try {
+      const data = await fetchHotels();
+      setHotels(data);
+      setHotelId((prev) => {
+        if (data.length && !data.some((h) => h.id === prev)) return data[0].id;
+        return prev || data[0]?.id || '';
+      });
+    } catch (e) {
+      console.error(e);
+      setHotels([]);
+    } finally {
+      setLoadingHotels(false);
+    }
+  }, [userId, userIsAdmin]);
+
+  /* ── load categories for selected hotel ───────────────────────── */
+  const loadCategories = useCallback(async (hId) => {
+    if (!supabase || !userId || !userIsAdmin || !hId) return;
+    setLoadingCategories(true);
+    try {
+      const data = await fetchCategoriesForHotel(hId);
+      setCategories(data);
+      const order = data.map((c) => c.category_key);
+      setCategoryOrder(order);
+      setCategoryKey((prev) => (order.length && !order.includes(prev) ? order[0] : prev));
+    } catch (e) {
+      console.error(e);
+      setCategories([]);
+      setCategoryOrder([]);
+    } finally {
+      setLoadingCategories(false);
+    }
+  }, [userId, userIsAdmin]);
+
   /* ── auth init ────────────────────────────────────────────────── */
   useEffect(() => {
     if (!isSupabaseConfigured) { setAuthReady(true); return; }
@@ -762,39 +816,86 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    if (userId && userIsAdmin) { loadImages(); loadSlides(); }
-  }, [loadImages, loadSlides]);
-
-  /* ── load/save category order ────────────────────────────────── */
-  const loadCategoryOrder = useCallback(async (hId) => {
-    const hotel = HOTEL_DEFINITIONS.find((x) => x.id === hId);
-    const defaultOrder = hotel?.categories.map((c) => c.id) ?? [];
-    try {
-      const saved = await fetchCategoryOrder(hId);
-      if (saved?.length) {
-        // Merge: saved order first, then any new categories not yet saved
-        const merged = [
-          ...saved.filter((k) => defaultOrder.includes(k)),
-          ...defaultOrder.filter((k) => !saved.includes(k)),
-        ];
-        setCategoryOrder(merged);
-      } else {
-        setCategoryOrder(defaultOrder);
-      }
-    } catch {
-      setCategoryOrder(defaultOrder);
+    if (userId && userIsAdmin) {
+      loadHotels();
+      loadImages();
+      loadSlides();
     }
-  }, []);
+  }, [userId, userIsAdmin, loadHotels, loadImages, loadSlides]);
+
+  useEffect(() => {
+    if (userId && userIsAdmin && hotelId) {
+      loadCategories(hotelId);
+    }
+  }, [hotelId, userId, userIsAdmin, loadCategories]);
 
   const handleSaveOrder = async () => {
     setSavingOrder(true);
     try {
       await saveCategoryOrder(hotelId, categoryOrder);
+      await loadCategories(hotelId);
       addToast('تم حفظ ترتيب الأقسام');
     } catch (err) {
       addToast(err.message || 'فشل حفظ الترتيب', 'error');
     } finally {
       setSavingOrder(false);
+    }
+  };
+
+  const handleCreateCategory = async (e) => {
+    e.preventDefault();
+    if (!newCategoryKey.trim() || !newCategoryName.trim()) return;
+    setCreatingCategory(true);
+    try {
+      await createCategory(hotelId, newCategoryKey.trim().toLowerCase(), newCategoryName.trim());
+      setNewCategoryKey('');
+      setNewCategoryName('');
+      await loadCategories(hotelId);
+      addToast('تم إضافة القسم');
+    } catch (err) {
+      addToast(err.message || 'فشل إضافة القسم', 'error');
+    } finally {
+      setCreatingCategory(false);
+    }
+  };
+
+  const startRename = (key) => {
+    setEditingKey(key);
+    setEditingName(getCategoryName(key));
+  };
+
+  const cancelRename = () => {
+    setEditingKey(null);
+    setEditingName('');
+  };
+
+  const handleRename = async (key) => {
+    if (!editingName.trim()) return;
+    setSavingRename(true);
+    try {
+      await updateCategory(hotelId, key, { name: editingName.trim() });
+      await loadCategories(hotelId);
+      cancelRename();
+      addToast('تم تحديث اسم القسم');
+    } catch (err) {
+      addToast(err.message || 'فشل تحديث الاسم', 'error');
+    } finally {
+      setSavingRename(false);
+    }
+  };
+
+  const handleDeleteCategory = async (key) => {
+    if (!window.confirm('سيحذف كل الصور في هذا القسم. هل أنت متأكد؟')) return;
+    setDeletingKey(key);
+    try {
+      await deleteCategory(hotelId, key);
+      if (categoryKey === key) setCategoryKey('');
+      await loadCategories(hotelId);
+      addToast('تم حذف القسم');
+    } catch (err) {
+      addToast(err.message || 'فشل حذف القسم', 'error');
+    } finally {
+      setDeletingKey(null);
     }
   };
 
@@ -815,16 +916,6 @@ export default function AdminPage() {
       return next;
     });
   };
-
-  useEffect(() => {
-    const h = HOTEL_DEFINITIONS.find((x) => x.id === hotelId);
-    if (h?.categories?.length) {
-      const still = h.categories.some((c) => c.id === categoryKey);
-      if (!still) setCategoryKey(h.categories[0].id);
-    }
-    if (userId && userIsAdmin) loadCategoryOrder(hotelId);
-  }, [hotelId, userId, userIsAdmin, loadCategoryOrder]);
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setSession(null);
@@ -1188,31 +1279,141 @@ export default function AdminPage() {
             {/* hotel selector */}
             <section>
               <p className="text-xs font-medium text-white/40 uppercase tracking-widest mb-4">اختر الفندق</p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {HOTEL_DEFINITIONS.map((h) => (
-                  <button
-                    key={h.id}
-                    type="button"
-                    onClick={() => setHotelId(h.id)}
-                    className={cn(
-                      'relative rounded-2xl border p-5 text-right transition-all duration-200',
-                      hotelId === h.id
-                        ? 'border-gold/50 bg-gold/8 shadow-[0_0_24px_rgba(212,175,55,0.08)]'
-                        : 'border-white/8 bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.05]'
-                    )}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className={cn('w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 transition-colors', hotelId === h.id ? 'bg-gold/20' : 'bg-white/5')}>
-                        <Hotel size={16} className={hotelId === h.id ? 'text-gold' : 'text-white/40'} />
-                      </div>
-                      {hotelId === h.id && (
-                        <span className="text-[10px] font-bold text-gold border border-gold/30 rounded-full px-2 py-0.5 bg-gold/5">محدد</span>
+              {loadingHotels ? (
+                <div className="flex items-center gap-2 text-sm text-white/30 py-4">
+                  <Loader2 size={16} className="animate-spin text-gold/60" />
+                  جاري تحميل الفنادق…
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {hotels.map((h) => (
+                    <button
+                      key={h.id}
+                      type="button"
+                      onClick={() => setHotelId(h.id)}
+                      className={cn(
+                        'relative rounded-2xl border p-5 text-right transition-all duration-200',
+                        hotelId === h.id
+                          ? 'border-gold/50 bg-gold/8 shadow-[0_0_24px_rgba(212,175,55,0.08)]'
+                          : 'border-white/8 bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.05]'
                       )}
-                    </div>
-                    <p className={cn('mt-3 font-bold text-base', hotelId === h.id ? 'text-white' : 'text-white/70')}>{h.displayName}</p>
-                    <p className="text-xs text-white/35 mt-1 leading-relaxed line-clamp-2">{h.description}</p>
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className={cn('w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 transition-colors', hotelId === h.id ? 'bg-gold/20' : 'bg-white/5')}>
+                          <Hotel size={16} className={hotelId === h.id ? 'text-gold' : 'text-white/40'} />
+                        </div>
+                        {hotelId === h.id && (
+                          <span className="text-[10px] font-bold text-gold border border-gold/30 rounded-full px-2 py-0.5 bg-gold/5">محدد</span>
+                        )}
+                      </div>
+                      <p className={cn('mt-3 font-bold text-base', hotelId === h.id ? 'text-white' : 'text-white/70')}>{h.display_name}</p>
+                      <p className="text-xs text-white/35 mt-1 leading-relaxed line-clamp-2">{h.description}</p>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* category management */}
+            <section>
+              <p className="text-xs font-medium text-white/40 uppercase tracking-widest mb-4">إدارة الأقسام</p>
+              <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-5 space-y-5">
+                <form onSubmit={handleCreateCategory} className="flex flex-col sm:flex-row gap-3">
+                  <input
+                    type="text"
+                    value={newCategoryKey}
+                    onChange={(e) => setNewCategoryKey(e.target.value)}
+                    placeholder="المفتاح (مثل gallery)"
+                    dir="ltr"
+                    className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/25 outline-none focus:border-gold/50"
+                  />
+                  <input
+                    type="text"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder="اسم القسم (مثل صور الفندق)"
+                    className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/25 outline-none focus:border-gold/50"
+                  />
+                  <button
+                    type="submit"
+                    disabled={creatingCategory || !newCategoryKey.trim() || !newCategoryName.trim()}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-gold/10 border border-gold/25 px-4 py-2.5 text-sm font-semibold text-gold hover:bg-gold/20 transition-colors disabled:opacity-50 shrink-0"
+                  >
+                    {creatingCategory ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+                    إضافة قسم
                   </button>
-                ))}
+                </form>
+
+                {loadingCategories ? (
+                  <div className="flex items-center gap-2 text-sm text-white/30 py-2">
+                    <Loader2 size={14} className="animate-spin text-gold/60" />
+                    جاري التحميل…
+                  </div>
+                ) : categories.length === 0 ? (
+                  <p className="text-sm text-white/30">لا توجد أقسام — أضف قسماً للبدء</p>
+                ) : (
+                  <div className="flex flex-col gap-1.5">
+                    {categories.map((c) => (
+                      <div
+                        key={c.category_key}
+                        className="flex items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2"
+                      >
+                        {editingKey === c.category_key ? (
+                          <>
+                            <input
+                              type="text"
+                              value={editingName}
+                              onChange={(e) => setEditingName(e.target.value)}
+                              className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white outline-none focus:border-gold/50"
+                              autoFocus
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleRename(c.category_key)}
+                              disabled={savingRename}
+                              className="rounded-lg bg-gold/10 border border-gold/25 px-3 py-1.5 text-xs font-semibold text-gold hover:bg-gold/20 disabled:opacity-50"
+                            >
+                              {savingRename ? <Loader2 size={12} className="animate-spin" /> : 'حفظ'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={cancelRename}
+                              className="rounded-lg px-3 py-1.5 text-xs text-white/40 hover:text-white/70"
+                            >
+                              إلغاء
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <span className="flex-1 text-sm text-white/70">{c.name}</span>
+                            <span className="text-[10px] text-white/25 font-mono" dir="ltr">{c.category_key}</span>
+                            <button
+                              type="button"
+                              onClick={() => startRename(c.category_key)}
+                              className="w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-gold hover:bg-white/10 transition-colors"
+                              aria-label="تعديل الاسم"
+                            >
+                              <Pencil size={13} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteCategory(c.category_key)}
+                              disabled={deletingKey === c.category_key}
+                              className="w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+                              aria-label="حذف القسم"
+                            >
+                              {deletingKey === c.category_key ? (
+                                <Loader2 size={13} className="animate-spin" />
+                              ) : (
+                                <Trash2 size={13} />
+                              )}
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </section>
 
@@ -1220,25 +1421,21 @@ export default function AdminPage() {
             <section>
               <p className="text-xs font-medium text-white/40 uppercase tracking-widest mb-4">نوع الغرفة / القسم</p>
               <div className="flex flex-wrap gap-2">
-                {categoryOrder.map((key) => {
-                  const c = selectedHotel?.categories.find((x) => x.id === key);
-                  if (!c) return null;
-                  return (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => setCategoryKey(c.id)}
-                      className={cn(
-                        'rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200 border',
-                        categoryKey === c.id
-                          ? 'bg-gold text-navy border-gold shadow-[0_0_16px_rgba(212,175,55,0.25)]'
-                          : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white/90'
-                      )}
-                    >
-                      {c.name}
-                    </button>
-                  );
-                })}
+                {categoryOrder.map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setCategoryKey(key)}
+                    className={cn(
+                      'rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200 border',
+                      categoryKey === key
+                        ? 'bg-gold text-navy border-gold shadow-[0_0_16px_rgba(212,175,55,0.25)]'
+                        : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white/90'
+                    )}
+                  >
+                    {getCategoryName(key)}
+                  </button>
+                ))}
               </div>
             </section>
 
@@ -1260,50 +1457,46 @@ export default function AdminPage() {
                 </button>
               </div>
               <div className="flex flex-col gap-1.5">
-                {categoryOrder.map((key, idx) => {
-                  const c = selectedHotel?.categories.find((x) => x.id === key);
-                  if (!c) return null;
-                  return (
-                    <div
-                      key={key}
-                      className={cn(
-                        'flex items-center gap-3 rounded-xl border px-4 py-2.5 transition-colors',
-                        categoryKey === key
-                          ? 'border-gold/30 bg-gold/5'
-                          : 'border-white/[0.06] bg-white/[0.02]'
-                      )}
+                {categoryOrder.map((key, idx) => (
+                  <div
+                    key={key}
+                    className={cn(
+                      'flex items-center gap-3 rounded-xl border px-4 py-2.5 transition-colors',
+                      categoryKey === key
+                        ? 'border-gold/30 bg-gold/5'
+                        : 'border-white/[0.06] bg-white/[0.02]'
+                    )}
+                  >
+                    <GripVertical size={14} className="text-white/20 shrink-0" />
+                    <span
+                      className="flex-1 text-sm cursor-pointer hover:text-gold/80 transition-colors"
+                      style={{ color: categoryKey === key ? 'var(--gold)' : 'rgba(255,255,255,0.65)' }}
+                      onClick={() => setCategoryKey(key)}
                     >
-                      <GripVertical size={14} className="text-white/20 shrink-0" />
-                      <span
-                        className="flex-1 text-sm cursor-pointer hover:text-gold/80 transition-colors"
-                        style={{ color: categoryKey === key ? 'var(--gold)' : 'rgba(255,255,255,0.65)' }}
-                        onClick={() => setCategoryKey(key)}
+                      {getCategoryName(key)}
+                    </span>
+                    <div className="flex gap-1">
+                      <button
+                        type="button"
+                        onClick={() => moveCategoryUp(idx)}
+                        disabled={idx === 0}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/10 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+                        aria-label="تحريك للأعلى"
                       >
-                        {c.name}
-                      </span>
-                      <div className="flex gap-1">
-                        <button
-                          type="button"
-                          onClick={() => moveCategoryUp(idx)}
-                          disabled={idx === 0}
-                          className="w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/10 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
-                          aria-label="تحريك للأعلى"
-                        >
-                          <ArrowUp size={13} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => moveCategoryDown(idx)}
-                          disabled={idx === categoryOrder.length - 1}
-                          className="w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/10 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
-                          aria-label="تحريك للأسفل"
-                        >
-                          <ArrowDown size={13} />
-                        </button>
-                      </div>
+                        <ArrowUp size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveCategoryDown(idx)}
+                        disabled={idx === categoryOrder.length - 1}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/10 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+                        aria-label="تحريك للأسفل"
+                      >
+                        <ArrowDown size={13} />
+                      </button>
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             </section>
 

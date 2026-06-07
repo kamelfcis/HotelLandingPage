@@ -26,9 +26,11 @@ on conflict (id) do update set
   description = excluded.description;
 
 insert into public.categories (hotel_id, category_key, name, sort_order) values
+  ('king-toot', 'gallery', 'صور الفندق', 0),
   ('king-toot', 'chalet', 'شاليه', 1),
   ('king-toot', 'suite', 'سويت', 2),
   ('king-toot', 'room', 'غرف', 3),
+  ('rocket-beach', 'gallery', 'صور الفندق', 0),
   ('rocket-beach', 'apt2', 'شقة 2 غرفه', 1),
   ('rocket-beach', 'apt3', 'شقة 3 غرفه', 2),
   ('rocket-beach', 'villa', 'فيلا', 3),
