@@ -1,15 +1,16 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-const ThemeContext = createContext({ isDark: false, toggle: () => {} });
+const ThemeContext = createContext({ isDark: true, toggle: () => {} });
 
 export const useTheme = () => useContext(ThemeContext);
 
 export const ThemeProvider = ({ children }) => {
   const [isDark, setIsDark] = useState(() => {
     try {
-      return localStorage.getItem('theme') === 'dark';
+      const saved = localStorage.getItem('theme');
+      return saved === null ? true : saved === 'dark';
     } catch {
-      return false;
+      return true;
     }
   });
 
