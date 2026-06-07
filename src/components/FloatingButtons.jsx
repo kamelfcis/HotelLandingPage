@@ -13,7 +13,7 @@ const FacebookIcon = () => (
   </svg>
 );
 
-const FloatingButtons = () => {
+const FloatingButtons = ({ onOpenBooking }) => {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -37,7 +37,7 @@ const FloatingButtons = () => {
       id: 'whatsapp',
       icon: <WhatsAppIcon />,
       label: 'WhatsApp',
-      href: 'https://wa.me/201090900516',
+      onClick: onOpenBooking,
       bg: 'bg-[#25D366]',
       hoverBg: 'hover:bg-[#1ebe57]',
       shadow: 'shadow-[0_4px_20px_rgba(37,211,102,0.3)]',
@@ -46,7 +46,7 @@ const FloatingButtons = () => {
       id: 'facebook',
       icon: <FacebookIcon />,
       label: 'Facebook',
-      href: 'https://facebook.com',
+      href: 'https://www.facebook.com/share/1GbuCC3dZP/?mibextid=wwXIfr',
       bg: 'bg-[#1877F2]',
       hoverBg: 'hover:bg-[#166fe0]',
       shadow: 'shadow-[0_4px_20px_rgba(24,119,242,0.3)]',
@@ -57,28 +57,50 @@ const FloatingButtons = () => {
     <div className="fixed bottom-6 left-6 z-[100] flex flex-col-reverse gap-3">
       <AnimatePresence>
         {visible &&
-          buttons.map((btn, i) => (
-            <motion.a
-              key={btn.id}
-              href={btn.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={btn.label}
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.5 }}
-              transition={{ duration: 0.3, delay: i * 0.05 }}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.92 }}
-              className={`group relative w-14 h-14 rounded-full ${btn.bg} ${btn.hoverBg} ${btn.shadow} flex items-center justify-center text-white transition-colors duration-200`}
-            >
-              {btn.icon}
+          buttons.map((btn, i) => {
+            const sharedProps = {
+              key: btn.id,
+              'aria-label': btn.label,
+              initial: { opacity: 0, scale: 0.5 },
+              animate: { opacity: 1, scale: 1 },
+              exit: { opacity: 0, scale: 0.5 },
+              transition: { duration: 0.3, delay: i * 0.05 },
+              whileHover: { scale: 1.1 },
+              whileTap: { scale: 0.92 },
+              className: `group relative w-14 h-14 rounded-full ${btn.bg} ${btn.hoverBg} ${btn.shadow} flex items-center justify-center text-white transition-colors duration-200`,
+            };
 
+            const tooltip = (
               <span className="absolute left-full ml-3 px-3 py-1.5 rounded-lg bg-surface border border-ink/10 text-ink text-xs font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none shadow-md">
                 {btn.label}
               </span>
-            </motion.a>
-          ))}
+            );
+
+            if (btn.onClick) {
+              return (
+                <motion.button
+                  {...sharedProps}
+                  type="button"
+                  onClick={btn.onClick}
+                >
+                  {btn.icon}
+                  {tooltip}
+                </motion.button>
+              );
+            }
+
+            return (
+              <motion.a
+                {...sharedProps}
+                href={btn.href}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {btn.icon}
+                {tooltip}
+              </motion.a>
+            );
+          })}
       </AnimatePresence>
     </div>
   );

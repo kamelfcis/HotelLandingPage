@@ -123,7 +123,7 @@ export default function LandingPage() {
         </div>
       </footer>
 
-      <FloatingButtons />
+      <FloatingButtons onOpenBooking={() => setShowBooking(true)} />
       <BookingPopup isOpen={showBooking} onClose={() => setShowBooking(false)} />
 
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden hidden md:block">
