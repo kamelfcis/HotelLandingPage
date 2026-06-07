@@ -76,7 +76,7 @@ export default function LandingPage() {
                 </svg>
               </div>
               <div className="text-right">
-                <span className="block text-muted text-xs font-arabic">داي يوز / واتساب</span>
+                <span className="block text-muted text-xs font-arabic">داي يوز / واتساب — قرية الندي - روكيت بيتش</span>
                 <span className="block text-ink font-inter text-sm tracking-wider ltr" dir="ltr">01090900516</span>
               </div>
             </a>
