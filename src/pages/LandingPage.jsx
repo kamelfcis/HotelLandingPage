@@ -4,7 +4,7 @@ import Hero from '../components/Hero';
 import BentoGrid from '../components/BentoGrid';
 import Navbar from '../components/Navbar';
 import FloatingButtons from '../components/FloatingButtons';
-import WhatsAppPopup from '../components/WhatsAppPopup';
+import BookingPopup from '../components/BookingPopup';
 import { fetchHotelsWithImages, fetchHeroSlides } from '../services/hotelsService';
 
 export default function LandingPage() {
@@ -124,7 +124,7 @@ export default function LandingPage() {
       </footer>
 
       <FloatingButtons />
-      <WhatsAppPopup isOpen={showBooking} onClose={() => setShowBooking(false)} />
+      <BookingPopup isOpen={showBooking} onClose={() => setShowBooking(false)} />
 
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden hidden md:block">
         <div className="absolute top-[-15%] right-[-15%] w-[35vw] h-[35vw] rounded-full bg-gold/[0.03] dark:bg-gold/[0.04] blur-[100px]" />
