@@ -5,11 +5,13 @@ import BentoGrid from '../components/BentoGrid';
 import Navbar from '../components/Navbar';
 import FloatingButtons from '../components/FloatingButtons';
 import BookingPopup from '../components/BookingPopup';
+import LocationPopup from '../components/LocationPopup';
 import { fetchHotelsWithImages, fetchHeroSlides } from '../services/hotelsService';
 
 export default function LandingPage() {
   const navigate = useNavigate();
   const [showBooking, setShowBooking] = useState(false);
+  const [showLocation, setShowLocation] = useState(false);
   const [hotels, setHotels] = useState([]);
   const [heroSlides, setHeroSlides] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -123,8 +125,12 @@ export default function LandingPage() {
         </div>
       </footer>
 
-      <FloatingButtons onOpenBooking={() => setShowBooking(true)} />
+      <FloatingButtons
+        onOpenBooking={() => setShowBooking(true)}
+        onOpenLocation={() => setShowLocation(true)}
+      />
       <BookingPopup isOpen={showBooking} onClose={() => setShowBooking(false)} />
+      <LocationPopup isOpen={showLocation} onClose={() => setShowLocation(false)} />
 
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden hidden md:block">
         <div className="absolute top-[-15%] right-[-15%] w-[35vw] h-[35vw] rounded-full bg-gold/[0.03] dark:bg-gold/[0.04] blur-[100px]" />
